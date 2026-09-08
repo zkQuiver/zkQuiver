@@ -1,0 +1,17 @@
+{
+  "name": "zkquiver",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "hardhat test",
+    "test:kats": "node orchestrator/src/kats.js",
+    "compile": "hardhat compile",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network robinhoodTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.0",
+    "hardhat": "^2.22.0",
+    "typescript": "^5.4.0"
+  }
+}

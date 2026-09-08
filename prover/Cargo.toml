@@ -1,0 +1,19 @@
+[package]
+name = "zkquiver-prover"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+blake3 = "1.5"
+clap = { version = "4", features = ["derive"] }
+hex = "0.4"
+k256 = { version = "0.13", features = ["ecdsa"] }
+serde_json = "1"
+sha3 = "0.10"
+
+[features]
+# Real ZK proof generation. Recommended path: SP1 (succinctlabs) or
+# RISC Zero — both produce proofs verifiable on any EVM chain, including
+# Robinhood Chain, via their published verifier contracts.
+zkvm = []
