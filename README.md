@@ -1,6 +1,26 @@
-# zkQuiver
+<div align="center">
 
-**Zero-knowledge proof anchoring for Robinhood Chain.**
+<img src="assets/banner.png" alt="zkQuiver — Anchoring Robinhood Chain's state, block by block. Verify it, don't trust it." width="100%">
+
+<br>
+
+[![CI](https://github.com/zkQuiver/zkQuiver/actions/workflows/ci.yml/badge.svg)](https://github.com/zkQuiver/zkQuiver/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-black.svg)](LICENSE)
+[![Chain](https://img.shields.io/badge/chain-Robinhood%20Chain-black.svg)](https://docs.robinhood.com/chain/)
+[![Solidity](https://img.shields.io/badge/solidity-0.8.24-black.svg)](contracts/ProofAnchor.sol)
+[![Conformance](https://img.shields.io/badge/conformance-17%2F17-black.svg)](orchestrator/src/kats.js)
+
+**[Website](https://github.com/zkQuiver/zkQuiver) · [How it works](#how-it-works) · [Quickstart](#quickstart) · [Verify it yourself](#verify-it-yourself) · [Roadmap](#roadmap)**
+
+<br>
+
+*Anchoring Robinhood Chain's state, block by block. Verify it, don't trust it.*
+
+</div>
+
+---
+
+## What is zkQuiver?
 
 Robinhood Chain validates state with a whitelisted fraud-proof validator
 set. zkQuiver adds an independent verification layer: it anchors
@@ -206,6 +226,30 @@ curl -X POST localhost:8080/anchor -H 'Idempotency-Key: a1' \
 ```
 
 Robinhood Chain RPC endpoints and chain IDs: https://docs.robinhood.com/chain/
+
+## Verify it yourself
+
+Every claim in this README is testable, with zero setup for the first step:
+
+```bash
+node orchestrator/src/kats.js   # no dependencies — 17 known-answer tests:
+                                # keccak-256 vectors, canonical JSON,
+                                # the 98-byte DS layout, replay binding
+npm install && npx hardhat test # full contract lifecycle on an in-memory
+                                # chain: escrow, anchoring, every rejection
+                                # rule, rotation, verifier hook, and the
+                                # computeDsHash conformance cross-check
+```
+
+The same 17-assertion suite is embedded in the website and runs in your
+browser. CI runs all of it on every commit — the badge above is live.
+
+## Honest status
+
+The anchoring protocol is real and testable today: signatures bind,
+replays fail, the window chain is unbroken. The zero-knowledge layer is
+a pluggable slot — until a zkVM adapter fills it, records are secured by
+the aggregator signature, not by a proof. See the roadmap.
 
 ## Roadmap
 
