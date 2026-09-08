@@ -155,6 +155,21 @@
   ul.plain{margin:16px 0 0 20px}
   ul.plain li{margin-bottom:8px}
 
+  /* roadmap phases */
+  .phases{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--black);margin-top:26px}
+  .phase{padding:22px 20px;border-right:2px solid var(--black)}
+  .phase:last-child{border-right:0}
+  .phase .num{display:inline-block;background:var(--black);color:var(--white);font-family:var(--mono);
+    font-size:12px;padding:3px 8px;margin-bottom:12px}
+  .phase.now .num::after{content:" · live"}
+  .phase b{display:block;font-size:16px;font-weight:800;margin-bottom:8px}
+  .phase p{font-size:13.5px;line-height:1.6}
+  @media(max-width:820px){
+    .phases{grid-template-columns:1fr 1fr}
+    .phase:nth-child(2){border-right:0}
+    .phase:nth-child(1),.phase:nth-child(2){border-bottom:2px solid var(--black)}
+  }
+
   /* status */
   .status{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--black);margin-top:26px}
   .status>div{padding:24px 22px}
@@ -191,6 +206,7 @@
       <li><a href="#how">How it works</a></li>
       <li><a href="#docs">Docs</a></li>
       <li><a href="#code">Code</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
       <li><a href="#status">Status</a></li>
       <li><a href="https://github.com/zkQuiver/zkQuiver" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
@@ -209,6 +225,7 @@
     <div class="term" id="verify">
       <div class="term-bar"><span>conformance suite — runs locally in your browser</span><span id="termCount"></span></div>
       <div class="term-body" id="termBody"><span class="term-empty">17 assertions loaded: keccak-256 known-answer vectors, canonical JSON determinism, domain-separation byte layout, replay binding. No network requests. Press "Run verification" to execute.</span></div>
+      <p class="caption" style="margin-top:10px">Verifies the protocol's cryptography locally in your browser — nothing simulated, nothing fetched. On-chain cross-verification against the deployed contract arrives with the Phase 2 testnet deployment.</p>
     </div>
   </div>
 </header>
@@ -314,6 +331,10 @@ curl -X POST localhost:8080/anchor \
 
     <h3>5 · Finality tracking</h3>
     <p class="measure">Each indexed record carries a commitment level that upgrades as its block hardens: <code>0</code> included → <code>1</code> safe → <code>2</code> finalized, where finalized means the batch containing the transaction has Ethereum L1 finality.</p>
+
+    <h3>6 · Token &amp; prover economics</h3>
+    <p class="measure">Verifiable computation isn't free: generating a zero-knowledge proof of a block window costs real compute — zkVM proving is the expensive step — and every anchor transaction costs gas on Robinhood Chain. The zkQuiver token funds this directly: a <b>3% tax on buys and sells</b> routes to the <b>prover treasury</b>, which pays for proof-generation compute (the SP1/RISC Zero provers of Phase 3), anchoring gas, and the orchestrator/indexer infrastructure that keeps records queryable.</p>
+    <p class="measure gray" style="font-size:15px;margin-top:12px">Until the ZK layer ships, the treasury accrues toward proving infrastructure. The tax lives in the token contract, separate from this protocol repo; treasury address and flows will be published on-chain so spending is as auditable as the proofs it funds.</p>
   </div>
 </section>
 
@@ -425,6 +446,23 @@ npx hardhat test                <span class="c"># full contract lifecycle + reje
         </ul>
       </div>
     </div>
+  </div>
+</section>
+
+<div class="band"><div class="wrap"><h2>Roadmap</h2><span>four phases, stated plainly</span></div></div>
+<section id="roadmap">
+  <div class="wrap">
+    <div class="phases">
+      <div class="phase now"><span class="num">Phase 1</span><b>Anchoring protocol</b>
+        <p>ProofAnchor contract, domain-separated signing, Validator Lock escrow, orchestrator, indexer, and the 17-assertion conformance suite — embedded in this page and running in CI on every commit.</p></div>
+      <div class="phase"><span class="num">Phase 2</span><b>Testnet deployment</b>
+        <p>ProofAnchor live on Robinhood Chain testnet. This page's verify button gains an on-chain step: your browser cross-checks its locally computed DS hash against the deployed contract's <code>computeDsHash</code> over RPC. Public indexer API.</p></div>
+      <div class="phase"><span class="num">Phase 3</span><b>Zero-knowledge layer</b>
+        <p>SP1 / RISC Zero adapter fills the <code>IProofVerifier</code> slot; a guest program proves state-transition claims over each window, with Public Inputs v2 committed in the zkVM journal. Proving compute funded by the prover treasury.</p></div>
+      <div class="phase"><span class="num">Phase 4</span><b>Permissionless proving</b>
+        <p>Open prover market: any staked validator submits, invalid submissions slash the lock, accepted proofs earn from the treasury. Public dashboard over the indexer.</p></div>
+    </div>
+    <p class="caption" style="margin-top:14px">No dates attached on purpose — phases ship when they verify, and this page will state what's live at each step.</p>
   </div>
 </section>
 
@@ -772,7 +810,7 @@ window.ZKQField = ZKQField;   // public handle: tweak ZKQ_FIELD, call ZKQField.l
 (function(){
   const groups=[".pipe",".bytes",".band"];
   const singles="section h3, section .codebox, section table, section .ds-lab";
-  const cardGroups=[".status",".cols"];
+  const cardGroups=[".status",".cols",".phases"];
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){
     document.querySelectorAll(".stage,.bytes>div,.band").forEach(el=>el.classList.add("in"));
     return;

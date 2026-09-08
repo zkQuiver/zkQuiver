@@ -251,7 +251,29 @@ replays fail, the window chain is unbroken. The zero-knowledge layer is
 a pluggable slot — until a zkVM adapter fills it, records are secured by
 the aggregator signature, not by a proof. See the roadmap.
 
+## Token & prover economics
+
+Verifiable computation isn't free: zkVM proving is compute-heavy, and every
+anchor costs gas. The zkQuiver token funds this directly — a **3% tax on
+buys and sells** routes to the **prover treasury**, which pays for
+proof-generation compute (the Phase 3 SP1/RISC Zero provers), anchoring
+gas, and orchestrator/indexer infrastructure. Until the ZK layer ships,
+the treasury accrues toward proving infrastructure. The tax lives in the
+token contract, separate from this repo; the treasury address and flows
+will be published on-chain.
+
 ## Roadmap
+
+**Phase 1 — Anchoring protocol (live):** contract, DS signing, escrow,
+orchestrator, indexer, conformance suite in CI.
+**Phase 2 — Testnet deployment:** ProofAnchor on Robinhood Chain testnet;
+the website's verify button gains an on-chain `computeDsHash` cross-check.
+**Phase 3 — Zero-knowledge layer:** zkVM adapter + guest program, treasury-
+funded proving.
+**Phase 4 — Permissionless proving:** open prover market with slashing and
+treasury rewards.
+
+Remaining engineering items:
 
 - [ ] SP1 or RISC Zero adapter implementing `IProofVerifier`, with the
       guest program checking state-transition claims over the block window
