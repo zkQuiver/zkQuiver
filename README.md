@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="zkQuiver — Anchoring Robinhood Chain's state, block by block. Verify it, don't trust it." width="100%">
+<img src="assets/banner.png" alt="zkQuiver, Anchoring Robinhood Chain's state, block by block. Verify it, don't trust it." width="100%">
 
 <br>
 
@@ -31,7 +31,7 @@ participate, creating an economic engine around proof production.
 
 ## How it works
 
-Every proof covers a **block window** — a contiguous range of blocks. For
+Every proof covers a **block window**, a contiguous range of blocks. For
 each window, the pipeline produces an *artifact* (a small JSON document
 committing to the state before and after the window), hashes it,
 wraps that hash in a domain-separated message signed by the aggregator
@@ -79,7 +79,7 @@ well-defined state claim.
 
 ### 2. Domain separation
 
-The signature never covers a bare hash — it covers a 98-byte
+The signature never covers a bare hash, it covers a 98-byte
 domain-separated (DS) message that binds the proof to this exact chain,
 contract, window, and position in the sequence, preventing replay across
 chains, contracts, or sequence positions:
@@ -100,9 +100,9 @@ chains, contracts, or sequence positions:
         ds_hash = keccak256(DS), signed EIP-191 by the aggregator
 ```
 
-Three implementations construct this message — Solidity
+Three implementations construct this message, Solidity
 (`computeDsHash`), TypeScript (`ds.ts` logic in `canonical.ts`), and Rust
-(`prover/src/main.rs`) — and must be byte-identical. The orchestrator
+(`prover/src/main.rs`), and must be byte-identical. The orchestrator
 cross-checks its locally computed `ds_hash` against the contract's view
 function before every submission, so a drift between implementations
 fails closed instead of anchoring garbage.
@@ -113,11 +113,11 @@ fails closed instead of anchoring garbage.
 
 - contract not paused
 - `proof_hash` not previously anchored
-- `seq == lastSeq + 1` (first proof is seq 1 — strict monotonicity)
+- `seq == lastSeq + 1` (first proof is seq 1, strict monotonicity)
 - `startBlock == lastEndBlock + 1` (contiguous windows, first starts at 1)
 - `endBlock − startBlock + 1 ≤ 2048` (bounded window size)
 - `ecrecover` of the EIP-191 signature over `ds_hash` resolves to the
-  current aggregator — or to `nextAggregator` once `seq ≥ activationSeq`,
+  current aggregator, or to `nextAggregator` once `seq ≥ activationSeq`,
   enabling zero-downtime key rotation
 - if a verifier is configured, the attached ZK proof must pass
 
@@ -127,7 +127,7 @@ which is the indexer's data source.
 
 **Validator Lock.** Operators call `registerValidator()` to escrow a fixed
 amount of an ERC-20 lock token; `unlockValidator()` releases it. Active
-validators accrue `numAccepts` per anchored proof — the hook for future
+validators accrue `numAccepts` per anchored proof, the hook for future
 reward distribution and slashing.
 
 ### 4. Pluggable ZK verification
@@ -152,7 +152,7 @@ The Rust prover canonicalizes the artifact, computes the blake3
 `proof_hash`, builds the 98-byte DS message, keccak-hashes it, signs the
 EIP-191 digest with the aggregator's secp256k1 key (emitting a standard
 65-byte r‖s‖v signature), and writes a signed artifact for the
-orchestrator. Real proof generation lives behind the `zkvm` feature flag —
+orchestrator. Real proof generation lives behind the `zkvm` feature flag , 
 the intended path is an SP1 or RISC Zero guest program that checks the
 state-transition claim over the window, with the journal committing to the
 Public Inputs v2 set.
@@ -180,9 +180,9 @@ and a persisted cursor for crash recovery) and upserts records into
 Postgres. Each record carries a commitment level that upgrades as the
 containing block moves through EVM block tags:
 
-- `0` — included (`latest`)
-- `1` — safe (`safe`)
-- `2` — finalized (`finalized`, i.e., the batch has L1 Ethereum finality)
+- `0`, included (`latest`)
+- `1`, safe (`safe`)
+- `2`, finalized (`finalized`, i.e., the batch has L1 Ethereum finality)
 
 ## Repo layout
 
@@ -190,7 +190,7 @@ containing block moves through EVM block tags:
 contracts/
   ProofAnchor.sol              core anchoring + Validator Lock escrow
   interfaces/IProofVerifier.sol
-  verifiers/NoopVerifier.sol   testing stub — replace with a zkVM adapter
+  verifiers/NoopVerifier.sol   testing stub, replace with a zkVM adapter
 orchestrator/                  REST API + canonicalization/DS library
 prover/                        Rust: canonicalize, blake3, DS, secp256k1 sign
 indexer/                       events → Postgres with finality reconciliation
@@ -232,7 +232,7 @@ Robinhood Chain RPC endpoints and chain IDs: https://docs.robinhood.com/chain/
 Every claim in this README is testable, with zero setup for the first step:
 
 ```bash
-node orchestrator/src/kats.js   # no dependencies — 17 known-answer tests:
+node orchestrator/src/kats.js   # no dependencies, 17 known-answer tests:
                                 # keccak-256 vectors, canonical JSON,
                                 # the 98-byte DS layout, replay binding
 npm install && npx hardhat test # full contract lifecycle on an in-memory
@@ -242,19 +242,19 @@ npm install && npx hardhat test # full contract lifecycle on an in-memory
 ```
 
 The same 17-assertion suite is embedded in the website and runs in your
-browser. CI runs all of it on every commit — the badge above is live.
+browser. CI runs all of it on every commit, the badge above is live.
 
 ## Honest status
 
 The anchoring protocol is real and testable today: signatures bind,
 replays fail, the window chain is unbroken. The zero-knowledge layer is
-a pluggable slot — until a zkVM adapter fills it, records are secured by
+a pluggable slot, until a zkVM adapter fills it, records are secured by
 the aggregator signature, not by a proof. See the roadmap.
 
 ## Token & prover economics
 
 Verifiable computation isn't free: zkVM proving is compute-heavy, and every
-anchor costs gas. The zkQuiver token funds this directly — a **3% tax on
+anchor costs gas. The zkQuiver token funds this directly. A **3% tax on
 buys and sells** routes to the **prover treasury**, which pays for
 proof-generation compute (the Phase 3 SP1/RISC Zero provers), anchoring
 gas, and orchestrator/indexer infrastructure. Until the ZK layer ships,
@@ -264,13 +264,13 @@ will be published on-chain.
 
 ## Roadmap
 
-**Phase 1 — Anchoring protocol (live):** contract, DS signing, escrow,
+**Phase 1, Anchoring protocol (live):** contract, DS signing, escrow,
 orchestrator, indexer, conformance suite in CI.
-**Phase 2 — Testnet deployment:** ProofAnchor on Robinhood Chain testnet;
+**Phase 2, Testnet deployment:** ProofAnchor on Robinhood Chain testnet;
 the website's verify button gains an on-chain `computeDsHash` cross-check.
-**Phase 3 — Zero-knowledge layer:** zkVM adapter + guest program, treasury-
+**Phase 3, Zero-knowledge layer:** zkVM adapter + guest program, treasury-
 funded proving.
-**Phase 4 — Permissionless proving:** open prover market with slashing and
+**Phase 4, Permissionless proving:** open prover market with slashing and
 treasury rewards.
 
 Remaining engineering items:
