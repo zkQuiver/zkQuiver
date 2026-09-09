@@ -225,7 +225,7 @@
     <div class="term" id="verify">
       <div class="term-bar"><span>conformance suite (runs locally in your browser)</span><span id="termCount"></span></div>
       <div class="term-body" id="termBody"><span class="term-empty">17 assertions loaded: keccak-256 known-answer vectors, canonical JSON determinism, domain-separation byte layout, replay binding. No network requests. Press "Run verification" to execute.</span></div>
-      <p class="caption" style="margin-top:10px">Verifies the protocol's cryptography locally in your browser. Nothing simulated, nothing fetched. On-chain cross-verification against the deployed contract arrives with the Phase 2 testnet deployment.</p>
+      <p class="caption" style="margin-top:10px">Verifies the protocol's cryptography locally in your browser. Nothing simulated, nothing fetched. After the local assertions it cross-checks the live contract on Robinhood Chain testnet.</p>
     </div>
   </div>
 </header>
@@ -435,6 +435,7 @@ npm install &amp;&amp; npx hardhat test  <span class="c"># contracts + on-chain 
           <li>Orchestrator API with idempotency and pre-flight conformance checks</li>
           <li>Indexer with three-tier finality tracking</li>
           <li>17-assertion conformance suite, embedded in this page</li>
+          <li>Deployed on Robinhood Chain testnet (chain 46630): <a href="https://explorer.testnet.chain.robinhood.com/address/0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271" target="_blank" rel="noopener">ProofAnchor</a> and <a href="https://explorer.testnet.chain.robinhood.com/address/0x338EcB7d484fe882Da93ee40d82B5413a279665c" target="_blank" rel="noopener">LineageVerifier</a>, wired. The verify button above cross-checks the live contract. <a href="https://explorer.testnet.chain.robinhood.com/tx/0x98e8fdca28754d23ebc5752484781e67676bedcc348a33a7c5d68c94e244a372" target="_blank" rel="noopener">First ZK-verified anchor</a>: seq 1, blocks 1 to 64, zkVerified true</li>
           <li>Sigma-layer zero-knowledge proofs: Pedersen-committed state roots (hiding), NIZK proofs of opening, and Chaum-Pedersen lineage linking, with an on-chain verifier contract and adversarial test suite. Proves commitment structure and linkage in zero knowledge; does not yet prove transition correctness (that is the zkVM tier)</li>
         </ul>
       </div>
@@ -458,7 +459,7 @@ npm install &amp;&amp; npx hardhat test  <span class="c"># contracts + on-chain 
     <div class="phases">
       <div class="phase now"><span class="num">Phase 1</span><b>Anchoring protocol</b>
         <p>ProofAnchor contract, domain-separated signing, Validator Lock escrow, orchestrator, indexer, and the 17-assertion conformance suite, embedded in this page and running in CI on every commit.</p></div>
-      <div class="phase"><span class="num">Phase 2</span><b>Testnet deployment</b>
+      <div class="phase now"><span class="num">Phase 2</span><b>Testnet deployment</b>
         <p>ProofAnchor live on Robinhood Chain testnet. This page's verify button gains an on-chain step: your browser cross-checks its locally computed DS hash against the deployed contract's <code>computeDsHash</code> over RPC. Public indexer API.</p></div>
       <div class="phase"><span class="num">Phase 3</span><b>Zero-knowledge layer</b>
         <p>Step one is shipped in the repo: a sigma-protocol layer (Pedersen commitments, NIZK openings, Chaum-Pedersen lineage links) with its on-chain verifier. Step two, zkVM proving of transition correctness via SP1 / RISC Zero, funded by the prover treasury.</p></div>
@@ -581,7 +582,7 @@ function buildTests(){
    real on-chain assertion: the browser recomputes the DS hash locally and
    compares it against the live contract's computeDsHash over RPC. Leave
    empty and the suite runs local-only, exactly as before. */
-window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "" };
+window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271" };
 
 async function rpc(url, method, params){
   const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},

@@ -16,7 +16,9 @@ async function main() {
   console.log(`deployer ${deployer.address} | chain ${net.chainId} | balance ${ethers.formatEther(bal)} ETH`);
   if (bal === 0n) throw new Error("Wallet has 0 ETH. Get test ETH: https://faucet.testnet.chain.robinhood.com");
 
-  let lockToken = process.env.LOCK_TOKEN_ADDRESS;
+  // Blank .env values must count as "unset" (?? alone treats "" as a value)
+  const envAddr = (k: string) => { const v = (process.env[k] ?? "").trim(); return v ? v : undefined; };
+  let lockToken = envAddr("LOCK_TOKEN_ADDRESS");
   if (!lockToken) {
     const Token = await ethers.getContractFactory("MockERC20");
     const token = await Token.deploy();
@@ -25,7 +27,8 @@ async function main() {
     console.log("lock token (MockERC20):", lockToken);
   }
 
-  const aggregator = process.env.AGGREGATOR_ADDRESS ?? deployer.address;
+  const aggregator = envAddr("AGGREGATOR_ADDRESS") ?? deployer.address;
+  console.log("aggregator:", aggregator, aggregator === deployer.address ? "(deployer; set AGGREGATOR_ADDRESS to a separate hot wallet for launch)" : "");
   const Anchor = await ethers.getContractFactory("ProofAnchor");
   const anchor = await Anchor.deploy(deployer.address, aggregator, lockToken, ethers.parseUnits("1", 18));
   await anchor.waitForDeployment();

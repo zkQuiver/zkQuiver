@@ -9,7 +9,7 @@ const S = require("../zk/sigma.js");
  * Demo roots are hashes of live chain block data, labeled as such.
  */
 async function main() {
-  const addr = process.env.PROOF_ANCHOR_ADDRESS;
+  const addr = (process.env.PROOF_ANCHOR_ADDRESS ?? "").trim();
   if (!addr) throw new Error("Set PROOF_ANCHOR_ADDRESS in .env (from deploy output)");
   const [signer] = await ethers.getSigners();
   const anchor = await ethers.getContractAt("ProofAnchor", addr, signer);

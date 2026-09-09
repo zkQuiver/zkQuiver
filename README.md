@@ -225,6 +225,20 @@ cargo build --release --manifest-path prover/Cargo.toml
 
 Robinhood Chain RPC endpoints and chain IDs: https://docs.robinhood.com/chain/
 
+## Deployments
+
+| Network | Contract | Address |
+| --- | --- | --- |
+| Robinhood Chain testnet (46630) | ProofAnchor | [`0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271`](https://explorer.testnet.chain.robinhood.com/address/0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271) |
+| Robinhood Chain testnet (46630) | LineageVerifier | [`0x338EcB7d484fe882Da93ee40d82B5413a279665c`](https://explorer.testnet.chain.robinhood.com/address/0x338EcB7d484fe882Da93ee40d82B5413a279665c) |
+
+The verifier is wired: every anchor must carry a valid zero-knowledge bundle.
+
+ZK-verified anchors (`zkVerified = true`, each linked to the previous in zero knowledge):
+- seq 2, blocks 65 to 128: [`0xde4178998c426dfe…`](https://explorer.testnet.chain.robinhood.com/tx/0xde4178998c426dfef82f2f733ad84083d5e6225e77ca97be77245c089cb082ce)
+- seq 1, blocks 1 to 64:
+[`0x98e8fdca28754d23…`](https://explorer.testnet.chain.robinhood.com/tx/0x98e8fdca28754d23ebc5752484781e67676bedcc348a33a7c5d68c94e244a372)
+
 ## Verify it yourself
 
 Every claim in this README is testable, with zero setup for the first step:
