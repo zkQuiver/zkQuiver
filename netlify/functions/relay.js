@@ -29,22 +29,35 @@ const json = (status, body) => ({
   body: JSON.stringify(body),
 });
 
-// ---- rate-limit store: Netlify Blobs if available, else per-instance memory ----
+// ---- rate-limit store: Netlify Blobs (persistent), memory fallback ----
+// Lambda-style handlers must hand the request to Blobs first
+// (connectLambda) or getStore() throws "environment not configured",
+// which is what made earlier deploys fall back to memory.
 const mem = new Map();
-async function counter(key) {
+let blobsReady = false, blobsError = null;
+function initBlobs(event) {
   try {
-    const { getStore } = require("@netlify/blobs");
-    const store = getStore("zkquiver-relay");
-    const v = await store.get(key);
-    return { n: Number(v || 0), bump: async () => store.set(key, String(Number(v || 0) + 1)), backend: "blobs" };
-  } catch (e) {
-    const n = mem.get(key) || 0;
-    return { n, bump: async () => mem.set(key, n + 1), backend: "memory" };
+    const { connectLambda } = require("@netlify/blobs");
+    connectLambda(event);
+    blobsReady = true;
+  } catch (e) { blobsReady = false; blobsError = e.message; }
+}
+async function counter(key) {
+  if (blobsReady) {
+    try {
+      const { getStore } = require("@netlify/blobs");
+      const store = getStore({ name: "zkquiver-relay", consistency: "strong" });
+      const v = await store.get(key);
+      return { n: Number(v || 0), bump: async () => store.set(key, String(Number(v || 0) + 1)), backend: "blobs" };
+    } catch (e) { blobsError = e.message; }
   }
+  const n = mem.get(key) || 0;
+  return { n, bump: async () => mem.set(key, n + 1), backend: "memory" };
 }
 
 exports.handler = async (event) => {
   try {
+    initBlobs(event);
     const provider = new ethers.JsonRpcProvider(RPC);
 
     // ---- GET: health, never secrets ----
@@ -57,6 +70,7 @@ exports.handler = async (event) => {
       }
       const c = await counter("probe");
       out.rateLimitBackend = c.backend;
+      if (c.backend !== "blobs") out.rateLimitNote = "persistent store unavailable: " + (blobsError || "unknown") + "; using per-instance memory";
       out.limits = { perIpPerDay: PER_IP_PER_DAY, globalPerDay: GLOBAL_PER_DAY };
       return json(200, out);
     }
