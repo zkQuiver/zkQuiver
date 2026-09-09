@@ -46,7 +46,7 @@ async function counter(key) {
   if (blobsReady) {
     try {
       const { getStore } = require("@netlify/blobs");
-      const store = getStore({ name: "zkquiver-relay", consistency: "strong" });
+      const store = getStore("zkquiver-relay"); // default consistency: strong mode needs an edge config Lambda-style functions lack
       const v = await store.get(key);
       return { n: Number(v || 0), bump: async () => store.set(key, String(Number(v || 0) + 1)), backend: "blobs" };
     } catch (e) { blobsError = e.message; }
