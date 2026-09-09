@@ -149,7 +149,7 @@ check("DS endBlock @82", hex(ds.slice(82, 90)), "0000000000000040");
 check("DS seq @90", hex(ds.slice(90, 98)), "0000000000000001");
 
 // Golden dsHash — cross-check on your machine with:
-//   cast keccak 0x$(node kats.js --print-ds)
+//   cast keccak <DS bytes printed below>
 // and against ProofAnchor.computeDsHash on a local chain.
 const goldenDsHash = hex(keccak256(ds));
 console.log(`\nGolden vector for cross-verification:`);

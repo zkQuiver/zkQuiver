@@ -6,7 +6,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
-    "test:kats": "tsx src/kats.ts"
+    "test:kats": "node src/kats.js"
   },
   "dependencies": {
     "@noble/hashes": "^1.4.0",

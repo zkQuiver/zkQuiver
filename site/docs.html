@@ -392,8 +392,11 @@ ds_hash   0x8e4a4d4557f5b80a0241c1d9b97c94ee10c2e9205b2f191a7c8f07ecaadfdb70</pr
   <div class="wrap">
     <h3>Guaranteed today, cryptographically</h3>
     <p class="measure">Anyone can verify, from public data alone, that the anchored record chain is <b>well-formed</b>: every record correctly signed over its full context, sequence unbroken, windows tiling perfectly, no proof hash reused. Replay of a signature across chains, contracts, windows, or sequence positions is impossible, the DS binding makes each signature single-purpose.</p>
-    <h3>Trusted today, replaced in Phase 3</h3>
-    <p class="measure">The <b>truth of the state roots inside a record</b> currently rests on the aggregator key: the contract proves <i>who</i> signed, not that the state transition is <i>correct</i>. The <code>IProofVerifier</code> slot exists exactly to retire that trust, once an SP1/RISC Zero adapter is set, each record must carry a proof that the claimed transition holds, checked on-chain. Until then, honest framing is: signed hash-anchoring with ZK-ready rails.</p>
+    <h3>What the sigma layer adds, and what still rests on trust</h3>
+    <p class="measure">With <code>LineageVerifier</code> set as the verifier, every anchor must carry zero-knowledge proofs that its commitments are well-formed and that the lineage links to the previous window's committed root, and the roots themselves stay private. What still rests on the aggregator key is the <b>correctness of the transition</b>: the proofs show the commitment structure is honest, not that the chain computed the new state correctly. Retiring that last trust is the zkVM tier: a guest program re-verifying the window's data inside SP1/RISC Zero, checked by the same pluggable slot.</p>
+    <h3>Keys, privacy, and what this website can see</h3>
+    <p class="measure">This website holds no keys and asks for no wallet. Its on-chain verification is a read-only call to the deployed contract; nothing is signed, nothing is sent. Private keys exist only in an operator's local environment file, which is excluded from the public repository and from every release package, and the repository's automated checks fail if key-shaped material appears anywhere else. On-chain, records carry commitment digests, never the state roots themselves: Pedersen commitments are perfectly hiding, so an observer of the chain learns nothing about the committed values even with unlimited compute. The full key-handling policy, role separation between the cold owner key and the hot signing key, and the rotation procedure are in the repository's <code>SECURITY.md</code>.</p>
+
     <h3>Key compromise &amp; response</h3>
     <p class="measure">If the aggregator key leaks, an attacker still cannot rewrite history (records are immutable, hashes unique) or skip ahead (sequence is strict), they could only extend the chain with bad-but-well-formed records. Response: <code>setPaused(true)</code> halts anchoring; <code>scheduleAggregatorRotation(next, activationSeq)</code> hands over to a new key from a chosen sequence number, with no downtime in the honest case.</p>
   </div>
@@ -403,7 +406,7 @@ ds_hash   0x8e4a4d4557f5b80a0241c1d9b97c94ee10c2e9205b2f191a7c8f07ecaadfdb70</pr
 <section id="faq">
   <div class="wrap">
     <h3>Is zkQuiver zero-knowledge today?</h3>
-    <p class="measure">No. Today it is a hash-anchoring protocol with a pluggable slot for on-chain ZK verification (Phase 3). Every page of this site says so, because a verification project that overclaims verifies nothing.</p>
+    <p class="measure">Partly, and here is the exact boundary. The repo ships a working sigma-protocol layer: state roots become Pedersen commitments (hiding), each anchor carries NIZK proofs of opening, and a Chaum-Pedersen proof links consecutive windows' boundary commitments, all without revealing the roots, with an on-chain verifier (<code>LineageVerifier.sol</code>) that plugs into the anchor contract. That is real zero-knowledge cryptography with an adversarial test suite you can run: <code>node zk/selftest.js</code>. What it does not yet do is prove the state transitions are <i>correct</i>; that requires the zkVM tier on the roadmap. A verification project that overclaims verifies nothing, so both halves of that sentence stay on this page.</p>
     <h3>Why do the contract files end in .sol, isn't that Solana?</h3>
     <p class="measure"><code>.sol</code> is <b>Solidity</b>, the language of Ethereum and every EVM chain, including Robinhood Chain. Solana is unrelated: its programs are Rust (<code>.rs</code>). Seeing <code>.sol</code> here is exactly what confirms this codebase targets an EVM chain.</p>
     <h3>What does the verify button on the overview page actually run?</h3>
@@ -411,7 +414,7 @@ ds_hash   0x8e4a4d4557f5b80a0241c1d9b97c94ee10c2e9205b2f191a7c8f07ecaadfdb70</pr
     <h3>What funds the proving?</h3>
     <p class="measure">The zkQuiver token carries a 3% buy/sell tax routed to the prover treasury, which pays for zkVM proving compute, anchoring gas, and infrastructure. Until the ZK layer ships, the treasury accrues toward proving infrastructure; the treasury address and flows will be published on-chain.</p>
     <h3>Can I run all of this myself?</h3>
-    <p class="measure">Yes, that's the point. <code>node orchestrator/src/kats.js</code> needs nothing installed and runs the same 17 assertions as the website. <code>npm install &amp;&amp; npx hardhat test</code> exercises the full contract lifecycle on an in-memory chain. The repo's CI runs both on every commit.</p>
+    <p class="measure">Yes, that's the point. <code>node orchestrator/src/kats.js</code> needs nothing installed and runs the same 17 assertions as the website; <code>node zk/selftest.js</code> runs the zero-knowledge layer's correctness, soundness, and privacy checks. <code>npm install &amp;&amp; npx hardhat test</code> exercises the full contract lifecycle on an in-memory chain. The repo's CI runs both on every commit.</p>
   </div>
 </section>
 

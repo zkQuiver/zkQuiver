@@ -199,30 +199,28 @@ scripts/deploy.ts              Hardhat deployment
 
 ## Quickstart
 
-```bash
-# 1. Contracts
-npm install --save-dev hardhat @openzeppelin/contracts
-npx hardhat compile
-LOCK_TOKEN_ADDRESS=0x... npx hardhat run scripts/deploy.ts --network robinhoodTestnet
+Full step-by-step with expected outputs: [RUNBOOK.md](RUNBOOK.md).
 
-# 2. Services
-cp .env.example .env   # fill in RPC_URL, CHAIN_ID, PROOF_ANCHOR_ADDRESS, keys
+```bash
+npm run doctor        # preflight: node version, zero-dep suites, .env, next step
+npm install
+npx hardhat test      # contracts + on-chain ZK verifier on an in-memory chain
+
+# Robinhood Chain testnet (chain ID 46630, ETH gas). Faucet:
+# https://faucet.testnet.chain.robinhood.com. Put a FRESH wallet's key in .env.
+cp .env.example .env
+npm run deploy:testnet   # token -> ProofAnchor -> LineageVerifier, wired
+npm run anchor:testnet   # first ZK-verified record, prints explorer link
+```
+
+Services (orchestrator generates the ZK bundle for every anchor and puts
+commitment digests on-chain, never the roots):
+
+```bash
 npm --prefix orchestrator install && npm --prefix orchestrator run dev
 psql $DATABASE_URL -f indexer/migrations/001_init.sql
 npm --prefix indexer install && npm --prefix indexer run dev
-
-# 3. Prover
 cargo build --release --manifest-path prover/Cargo.toml
-
-# 4. Anchor a proof
-curl -X POST localhost:8080/artifact -H 'Idempotency-Key: p1' \
-  -H 'Content-Type: application/json' -d '{
-    "start_block": 1, "end_block": 64,
-    "state_root_before": "'$(printf '0%.0s' {1..63})'1",
-    "state_root_after":  "'$(printf '0%.0s' {1..63})'2"
-  }'
-curl -X POST localhost:8080/anchor -H 'Idempotency-Key: a1' \
-  -H 'Content-Type: application/json' -d '{"artifact_id": "<from previous response>"}'
 ```
 
 Robinhood Chain RPC endpoints and chain IDs: https://docs.robinhood.com/chain/
@@ -243,6 +241,35 @@ npm install && npx hardhat test # full contract lifecycle on an in-memory
 
 The same 17-assertion suite is embedded in the website and runs in your
 browser. CI runs all of it on every commit, the badge above is live.
+
+## Zero-knowledge sigma layer
+
+The repo now includes a working zero-knowledge layer (`zk/`), built from
+first principles with zero dependencies: Pedersen commitments hide the
+state roots, NIZK proofs of opening (Okamoto) show the commitments are
+well-formed, and a Chaum-Pedersen proof links consecutive windows'
+boundary commitments without revealing the roots. `LineageVerifier.sol`
+verifies the full bundle on-chain (affine secp256k1 ops plus the
+ecrecover multiplication trick) and plugs into `ProofAnchor` via
+`setVerifier`. Run it yourself, nothing to install:
+
+```bash
+node zk/selftest.js   # correctness, soundness (tamper/forgery), privacy
+node zk/prove.js      # emit an on-chain-ready proof bundle
+```
+
+Scope, stated plainly: this proves commitment structure and lineage
+linkage in zero knowledge. It does not prove the state transition itself
+is correct; that is the zkVM tier on the roadmap.
+
+## Keys and privacy
+
+No private keys exist in this repository. Keys live only in a local `.env`
+(git-ignored, excluded from release packages); `npm run doctor` and CI both
+fail if key-shaped material appears anywhere else. The website holds no
+keys and performs read-only calls. On-chain records carry commitment
+digests, never state roots. Full policy, role separation, and rotation
+procedure: [SECURITY.md](SECURITY.md).
 
 ## Honest status
 

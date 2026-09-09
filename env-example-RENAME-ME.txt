@@ -1,0 +1,24 @@
+# Robinhood Chain testnet (live): chain ID 46630, gas in ETH
+# Faucet: https://faucet.testnet.chain.robinhood.com
+# Explorer: https://explorer.testnet.chain.robinhood.com
+RPC_URL=https://rpc.testnet.chain.robinhood.com
+CHAIN_ID=46630
+
+# KEY SAFETY (see SECURITY.md): fresh wallets only; this file never leaves
+# your machine; never paste keys into chats, screenshots, or AI tools.
+# Owner key: deploys, pauses, rotates, sets verifier. Keep cold.
+DEPLOYER_PRIVATE_KEY=
+# Hot signer for anchors (orchestrator). For launch, use a SEPARATE wallet
+# and set AGGREGATOR_ADDRESS to its address before deploying.
+AGGREGATOR_PRIVATE_KEY=
+AGGREGATOR_ADDRESS=
+
+# Filled in from deploy output
+PROOF_ANCHOR_ADDRESS=
+LINEAGE_VERIFIER_ADDRESS=
+
+# Services
+PORT=8080
+ARTIFACT_DIR=./orchestrator/data/artifacts
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/zkquiver
+POLL_MS=15000

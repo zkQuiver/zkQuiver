@@ -1,39 +1,51 @@
 import { ethers } from "hardhat";
 
 /**
- * Deploy ProofAnchor to Robinhood Chain.
- *
- * Robinhood Chain is fully EVM-compatible — Hardhat/Foundry work out of
- * the box. Configure the network in hardhat.config.ts with the RPC URL
- * and chain ID from https://docs.robinhood.com/chain/.
- *
+ * One-command testnet deployment:
  *   npx hardhat run scripts/deploy.ts --network robinhoodTestnet
+ * Needs only DEPLOYER_PRIVATE_KEY in .env (wallet funded from the faucet).
+ * Deploys: lock token (Mock, unless LOCK_TOKEN_ADDRESS set) -> ProofAnchor
+ * -> LineageVerifier -> setVerifier. Prints .env lines, the site's
+ * ZKQ_ONCHAIN snippet, and explorer links.
  */
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", deployer.address);
+  if (!deployer) throw new Error("Set DEPLOYER_PRIVATE_KEY in .env");
+  const net = await ethers.provider.getNetwork();
+  const bal = await ethers.provider.getBalance(deployer.address);
+  console.log(`deployer ${deployer.address} | chain ${net.chainId} | balance ${ethers.formatEther(bal)} ETH`);
+  if (bal === 0n) throw new Error("Wallet has 0 ETH. Get test ETH: https://faucet.testnet.chain.robinhood.com");
+
+  let lockToken = process.env.LOCK_TOKEN_ADDRESS;
+  if (!lockToken) {
+    const Token = await ethers.getContractFactory("MockERC20");
+    const token = await Token.deploy();
+    await token.waitForDeployment();
+    lockToken = await token.getAddress();
+    console.log("lock token (MockERC20):", lockToken);
+  }
 
   const aggregator = process.env.AGGREGATOR_ADDRESS ?? deployer.address;
-  const lockToken = process.env.LOCK_TOKEN_ADDRESS;
-  const lockAmount = ethers.parseUnits(process.env.LOCK_AMOUNT ?? "1", 18);
-  if (!lockToken) throw new Error("LOCK_TOKEN_ADDRESS required (SPL mint -> ERC-20)");
-
-  const ProofAnchor = await ethers.getContractFactory("ProofAnchor");
-  const anchor = await ProofAnchor.deploy(deployer.address, aggregator, lockToken, lockAmount);
+  const Anchor = await ethers.getContractFactory("ProofAnchor");
+  const anchor = await Anchor.deploy(deployer.address, aggregator, lockToken, ethers.parseUnits("1", 18));
   await anchor.waitForDeployment();
-  console.log("ProofAnchor:", await anchor.getAddress());
+  const anchorAddr = await anchor.getAddress();
+  console.log("ProofAnchor:", anchorAddr);
 
-  // Optional: deploy the Noop verifier for local end-to-end testing.
-  if (process.env.DEPLOY_NOOP_VERIFIER === "1") {
-    const Noop = await ethers.getContractFactory("NoopVerifier");
-    const noop = await Noop.deploy();
-    await noop.waitForDeployment();
-    await (await anchor.setVerifier(await noop.getAddress())).wait();
-    console.log("NoopVerifier:", await noop.getAddress());
-  }
+  const V = await ethers.getContractFactory("LineageVerifier");
+  const verifier = await V.deploy();
+  await verifier.waitForDeployment();
+  const verifierAddr = await verifier.getAddress();
+  await (await anchor.setVerifier(verifierAddr)).wait();
+  console.log("LineageVerifier:", verifierAddr, "(wired: every anchor now requires a valid ZK bundle)");
+
+  const rpc = (process.env.RPC_URL ?? "https://rpc.testnet.chain.robinhood.com");
+  console.log("\n----- paste into .env -----");
+  console.log(`PROOF_ANCHOR_ADDRESS=${anchorAddr}`);
+  console.log(`LINEAGE_VERIFIER_ADDRESS=${verifierAddr}`);
+  console.log("\n----- paste into site/index.html (ZKQ_ONCHAIN) -----");
+  console.log(`window.ZKQ_ONCHAIN = { rpcUrl: "${rpc}", contract: "${anchorAddr}" };`);
+  console.log("\n----- explorer -----");
+  console.log(`https://explorer.testnet.chain.robinhood.com/address/${anchorAddr}`);
 }
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch((e) => { console.error(e); process.exit(1); });

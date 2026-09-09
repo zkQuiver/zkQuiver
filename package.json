@@ -4,8 +4,11 @@
   "scripts": {
     "test": "hardhat test",
     "test:kats": "node orchestrator/src/kats.js",
-    "compile": "hardhat compile",
-    "deploy:testnet": "hardhat run scripts/deploy.ts --network robinhoodTestnet"
+    "test:zk": "node zk/selftest.js",
+    "doctor": "node scripts/doctor.js",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network robinhoodTestnet",
+    "anchor:testnet": "hardhat run scripts/anchor-demo.ts --network robinhoodTestnet",
+    "compile": "hardhat compile"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

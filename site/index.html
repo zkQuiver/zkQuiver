@@ -416,9 +416,9 @@ anyhow::ensure!(ds.len() == 98, <span class="k">"DS length mismatch"</span>);
     <h3>Run the full suite locally</h3>
     <p class="measure">The in-browser suite proves the hashing and layout logic. The repository carries the rest, a Hardhat suite that deploys the contract on an in-memory chain and exercises the full lifecycle, every rejection rule, aggregator rotation, and a live cross-check of <code>computeDsHash</code> against this page's golden vector.</p>
     <div class="codebox"><div class="cb-bar"><span>terminal</span></div>
-<pre>npm install
-node orchestrator/src/kats.js   <span class="c"># the same 17 assertions this page runs</span>
-npx hardhat test                <span class="c"># full contract lifecycle + rejections</span></pre></div>
+<pre>node orchestrator/src/kats.js   <span class="c"># the same 17 assertions this page runs</span>
+node zk/selftest.js             <span class="c"># zero-knowledge layer: correctness, soundness, privacy</span>
+npm install &amp;&amp; npx hardhat test  <span class="c"># contracts + on-chain ZK verifier, full lifecycle</span></pre></div>
   </div>
 </section>
 
@@ -435,6 +435,7 @@ npx hardhat test                <span class="c"># full contract lifecycle + reje
           <li>Orchestrator API with idempotency and pre-flight conformance checks</li>
           <li>Indexer with three-tier finality tracking</li>
           <li>17-assertion conformance suite, embedded in this page</li>
+          <li>Sigma-layer zero-knowledge proofs: Pedersen-committed state roots (hiding), NIZK proofs of opening, and Chaum-Pedersen lineage linking, with an on-chain verifier contract and adversarial test suite. Proves commitment structure and linkage in zero knowledge; does not yet prove transition correctness (that is the zkVM tier)</li>
         </ul>
       </div>
       <div class="todo">
@@ -460,7 +461,7 @@ npx hardhat test                <span class="c"># full contract lifecycle + reje
       <div class="phase"><span class="num">Phase 2</span><b>Testnet deployment</b>
         <p>ProofAnchor live on Robinhood Chain testnet. This page's verify button gains an on-chain step: your browser cross-checks its locally computed DS hash against the deployed contract's <code>computeDsHash</code> over RPC. Public indexer API.</p></div>
       <div class="phase"><span class="num">Phase 3</span><b>Zero-knowledge layer</b>
-        <p>SP1 / RISC Zero adapter fills the <code>IProofVerifier</code> slot; a guest program proves state-transition claims over each window, with Public Inputs v2 committed in the zkVM journal. Proving compute funded by the prover treasury.</p></div>
+        <p>Step one is shipped in the repo: a sigma-protocol layer (Pedersen commitments, NIZK openings, Chaum-Pedersen lineage links) with its on-chain verifier. Step two, zkVM proving of transition correctness via SP1 / RISC Zero, funded by the prover treasury.</p></div>
       <div class="phase"><span class="num">Phase 4</span><b>Permissionless proving</b>
         <p>Open prover market: any staked validator submits, invalid submissions slash the lock, accepted proofs earn from the treasury. Public dashboard over the indexer.</p></div>
     </div>
@@ -580,7 +581,7 @@ function buildTests(){
    real on-chain assertion: the browser recomputes the DS hash locally and
    compares it against the live contract's computeDsHash over RPC. Leave
    empty and the suite runs local-only, exactly as before. */
-window.ZKQ_ONCHAIN = { rpcUrl: "", contract: "" };
+window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "" };
 
 async function rpc(url, method, params){
   const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
@@ -615,7 +616,7 @@ async function onchainCheck(line){
     line("f","MISMATCH: contract returned 0x"+onchain.slice(0,16)+"…, browser computed 0x"+local.slice(0,16)+"…");
     return false;
   }catch(e){
-    line("d","on-chain check unavailable ("+e.message+") — local results above are unaffected");
+    line("d","on-chain check unavailable ("+e.message+"), local results above are unaffected");
     return null;
   }
 }

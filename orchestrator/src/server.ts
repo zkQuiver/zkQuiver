@@ -3,6 +3,10 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { ethers } from "ethers";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const { proveBundle } = require("../../zk/prove.js");
+const S = require("../../zk/sigma.js");
 import {
   Artifact,
   canonicalize,
@@ -21,7 +25,8 @@ import {
 const PORT = Number(process.env.PORT ?? 8080);
 const RPC_URL = process.env.RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
 const CONTRACT = process.env.PROOF_ANCHOR_ADDRESS ?? "";
-const AGGREGATOR_KEY = process.env.AGGREGATOR_PRIVATE_KEY ?? "";
+const AGGREGATOR_KEY = (process.env.AGGREGATOR_PRIVATE_KEY ?? "").trim().replace(/^["']|["']$/g, "");
+// Key material is never logged. Only the derived address is ever printed.
 const SUBMITTER_KEY = process.env.SUBMITTER_PRIVATE_KEY ?? AGGREGATOR_KEY;
 const ARTIFACT_DIR = process.env.ARTIFACT_DIR ?? "./data/artifacts";
 
@@ -141,16 +146,28 @@ app.post("/anchor", async (req, res) => {
     // Aggregator signs the DS hash (EIP-191 personal message).
     const sig = await aggregatorWallet.signMessage(ethers.getBytes("0x" + dh));
 
+    // Zero-knowledge bundle (sigma layer): commit to the roots, prove the
+    // openings and the lineage link, bound to the public-inputs hash.
     const piHash = publicInputsHash(artifact);
+    const hexToU8 = (h: string) => Uint8Array.from(h.match(/../g)!.map((x) => parseInt(x, 16)));
+    const bundle = proveBundle(
+      hexToU8(artifact.state_root_before),
+      hexToU8(artifact.state_root_after),
+      hexToU8(piHash)
+    );
+    // On-chain we anchor commitment digests, never the roots (privacy).
+    const cDigest = (P: any) => ethers.keccak256(
+      "0x" + P.x.toString(16).padStart(64, "0") + P.y.toString(16).padStart(64, "0"));
+
     const tx = await contract.anchorProof(
       "0x" + ph,
-      "0x" + artifact.state_root_before,
-      "0x" + artifact.state_root_after,
+      cDigest(bundle.commitments.C_in),
+      cDigest(bundle.commitments.C_out),
       artifact.start_block,
       artifact.end_block,
       seq,
       sig,
-      "0x", // zkProof bytes — populated once a real verifier is wired in
+      bundle.hex,
       "0x" + piHash
     );
     const receipt = await tx.wait();
@@ -170,10 +187,24 @@ app.post("/anchor", async (req, res) => {
 });
 
 app.post("/prove", async (req, res) => {
-  // /artifact + /anchor combined; reuse handlers via internal fetches is
-  // overkill — inline the two steps with derived idempotency keys.
-  req.url = "/artifact";
-  res.status(501).json({ error: "use /artifact then /anchor (combined route TODO)" });
+  // /artifact + /anchor in one call, with derived idempotency keys.
+  try {
+    const key = idemKey(req);
+    if (idempotency.has(key)) return res.status(200).json(idempotency.get(key));
+    const base = `http://127.0.0.1:${PORT}`;
+    const hdr = (k: string) => ({ "Content-Type": "application/json", "Idempotency-Key": k });
+    const a = await fetch(`${base}/artifact`, { method: "POST", headers: hdr(key + ":artifact"), body: JSON.stringify(req.body) });
+    const aj: any = await a.json();
+    if (!a.ok) return res.status(a.status).json(aj);
+    const b = await fetch(`${base}/anchor`, { method: "POST", headers: hdr(key + ":anchor"), body: JSON.stringify({ artifact_id: aj.artifact_id }) });
+    const bj: any = await b.json();
+    if (!b.ok) return res.status(b.status).json(bj);
+    const out = { ...aj, ...bj, status: "proved_and_anchored" };
+    idempotency.set(key, out);
+    res.json(out);
+  } catch (e: any) {
+    res.status(e.status ?? 500).json({ error: e.message });
+  }
 });
 
 app.get("/proof/:artifact_id", (req, res) => {
@@ -186,4 +217,7 @@ app.get("/health", async (_req, res) => {
   res.json({ status: "healthy", version: "0.1.0", rpc_url: RPC_URL, contract: CONTRACT || null });
 });
 
-app.listen(PORT, () => console.log(`zkQuiver orchestrator listening on :${PORT}`));
+app.listen(PORT, () => {
+  console.log(`zkQuiver orchestrator listening on :${PORT}`);
+  if (aggregatorWallet) console.log(`aggregator address: ${aggregatorWallet.address}`); // address only, never the key
+});
