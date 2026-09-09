@@ -459,7 +459,7 @@ npm install &amp;&amp; npx hardhat test  <span class="c"># contracts + on-chain 
           <li>Orchestrator API with idempotency and pre-flight conformance checks</li>
           <li>Indexer with three-tier finality tracking</li>
           <li>17-assertion conformance suite, embedded in this page</li>
-          <li>Deployed on Robinhood Chain testnet (chain 46630): <a href="https://explorer.testnet.chain.robinhood.com/address/0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271" target="_blank" rel="noopener">ProofAnchor</a> and <a href="https://explorer.testnet.chain.robinhood.com/address/0x338EcB7d484fe882Da93ee40d82B5413a279665c" target="_blank" rel="noopener">LineageVerifier</a>, wired. The verify button above cross-checks the live contract. <a href="https://explorer.testnet.chain.robinhood.com/tx/0x98e8fdca28754d23ebc5752484781e67676bedcc348a33a7c5d68c94e244a372" target="_blank" rel="noopener">First ZK-verified anchor</a>: seq 1, blocks 1 to 64, zkVerified true</li>
+          <li>Deployed on Robinhood Chain testnet (chain 46630): <a href="https://explorer.testnet.chain.robinhood.com/address/0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271" target="_blank" rel="noopener">ProofAnchor</a> and <a href="https://explorer.testnet.chain.robinhood.com/address/0x338EcB7d484fe882Da93ee40d82B5413a279665c" target="_blank" rel="noopener">LineageVerifier</a>, wired, plus the permissionless <a href="https://explorer.testnet.chain.robinhood.com/address/0xc62fE315aeD3c652725361f1cB022443b6D4278c" target="_blank" rel="noopener">PublicProofs</a> registry where visitors record their own proofs. The verify button above cross-checks the live contract. <a href="https://explorer.testnet.chain.robinhood.com/tx/0x98e8fdca28754d23ebc5752484781e67676bedcc348a33a7c5d68c94e244a372" target="_blank" rel="noopener">First ZK-verified anchor</a>: seq 1, blocks 1 to 64, zkVerified true</li>
           <li>Sigma-layer zero-knowledge proofs: Pedersen-committed state roots (hiding), NIZK proofs of opening, and Chaum-Pedersen lineage linking, with an on-chain verifier contract and adversarial test suite. Proves commitment structure and linkage in zero knowledge; does not yet prove transition correctness (that is the zkVM tier)</li>
         </ul>
       </div>
@@ -628,7 +628,7 @@ function buildTests(){
    real on-chain assertion: the browser recomputes the DS hash locally and
    compares it against the live contract's computeDsHash over RPC. Leave
    empty and the suite runs local-only, exactly as before. */
-window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271", verifier: "0x338EcB7d484fe882Da93ee40d82B5413a279665c", publicProofs: "", relay: "/.netlify/functions/relay" };
+window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271", verifier: "0x338EcB7d484fe882Da93ee40d82B5413a279665c", publicProofs: "0xc62fE315aeD3c652725361f1cB022443b6D4278c", relay: "/.netlify/functions/relay" };
 
 async function rpc(url, method, params){
   const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},

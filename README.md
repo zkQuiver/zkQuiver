@@ -230,6 +230,7 @@ Robinhood Chain RPC endpoints and chain IDs: https://docs.robinhood.com/chain/
 | Network | Contract | Address |
 | --- | --- | --- |
 | Robinhood Chain testnet (46630) | ProofAnchor | [`0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271`](https://explorer.testnet.chain.robinhood.com/address/0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271) |
+| Robinhood Chain testnet (46630) | PublicProofs (permissionless registry) | [`0xc62fE315aeD3c652725361f1cB022443b6D4278c`](https://explorer.testnet.chain.robinhood.com/address/0xc62fE315aeD3c652725361f1cB022443b6D4278c) |
 | Robinhood Chain testnet (46630) | LineageVerifier | [`0x338EcB7d484fe882Da93ee40d82B5413a279665c`](https://explorer.testnet.chain.robinhood.com/address/0x338EcB7d484fe882Da93ee40d82B5413a279665c) |
 
 The verifier is wired: every anchor must carry a valid zero-knowledge bundle.

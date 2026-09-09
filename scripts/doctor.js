@@ -23,8 +23,14 @@ const hasModules = fs.existsSync(path.join(root, "node_modules", "hardhat"));
 hasModules ? ok("hardhat installed") : (bad("hardhat not installed yet"), next = next || "npm install");
 
 const envPath = path.join(root, ".env");
-const env = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
-const get = (k) => (env.match(new RegExp("^" + k + "=(.*)$", "m")) || [])[1]?.trim();
+const env = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8").replace(/^\uFEFF/, "") : "";
+// common Windows trap: Notepad silently saving as ".env.txt"
+if (fs.existsSync(path.join(root, ".env.txt"))) bad('found ".env.txt": Notepad added .txt. Rename it to exactly ".env" (enable View > Show > File name extensions).');
+// tolerate leading whitespace, optional quotes, CRLF (same leniency as dotenv)
+const get = (k) => {
+  const m = env.match(new RegExp("^\\s*" + k + "\\s*=\\s*(.*)$", "m"));
+  return m ? m[1].trim().replace(/^["']|["']$/g, "").replace(/\r$/, "") : undefined;
+};
 if (!env) { bad(".env missing (copy .env.example to .env)"); }
 else {
   get("DEPLOYER_PRIVATE_KEY") ? ok("DEPLOYER_PRIVATE_KEY set") : bad("DEPLOYER_PRIVATE_KEY empty");
