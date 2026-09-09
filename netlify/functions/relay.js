@@ -14,7 +14,7 @@ const { ethers } = require("ethers");
 const RPC = process.env.RPC_URL || "https://rpc.testnet.chain.robinhood.com";
 const PUBLIC_PROOFS = (process.env.PUBLIC_PROOFS_ADDRESS || "").trim();
 const KEY = (process.env.RELAYER_PRIVATE_KEY || "").trim().replace(/^["']|["']$/g, "");
-const PER_IP_PER_DAY = Number(process.env.RELAY_PER_IP_PER_DAY || 2);
+const PER_IP_PER_DAY = Number(process.env.RELAY_PER_IP_PER_DAY || 1);
 const GLOBAL_PER_DAY = Number(process.env.RELAY_GLOBAL_PER_DAY || 300);
 const MIN_BALANCE_ETH = process.env.RELAY_MIN_BALANCE_ETH || "0.0005";
 const EXPLORER = process.env.EXPLORER_TX || "https://explorer.testnet.chain.robinhood.com/tx/";
@@ -87,7 +87,7 @@ exports.handler = async (event) => {
     const ip = (event.headers["x-nf-client-connection-ip"] || event.headers["client-ip"] || event.headers["x-forwarded-for"] || "unknown").split(",")[0].trim();
     const day = new Date().toISOString().slice(0, 10);
     const ipC = await counter(`ip:${day}:${ip}`), gC = await counter(`global:${day}`);
-    if (ipC.n >= PER_IP_PER_DAY) return json(429, { error: `limit reached: ${PER_IP_PER_DAY} free submissions per day. You can still record with your own wallet.` });
+    if (ipC.n >= PER_IP_PER_DAY) return json(429, { error: `limit reached: ${PER_IP_PER_DAY} free submission per visitor per day. You can still record with your own wallet.` });
     if (gC.n >= GLOBAL_PER_DAY) return json(429, { error: "daily relayer budget exhausted; record with your own wallet or try tomorrow" });
 
     const wallet = new ethers.Wallet(KEY.startsWith("0x") ? KEY : "0x" + KEY, provider);
