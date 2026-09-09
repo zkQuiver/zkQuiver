@@ -505,7 +505,7 @@ npm install &amp;&amp; npx hardhat test  <span class="c"># contracts + on-chain 
       </div>
       <div class="prove-out" id="pvOut">Nothing generated yet.</div>
     </div>
-    <p class="caption" style="margin-top:14px">"Record on-chain" writes your verified proof into the permissionless PublicProofs registry and gives you a transaction of your own: with your wallet you pay a fraction of a cent of gas on Robinhood Chain; the free option is paid by the project's relayer, rate-limited to a couple per day. The operator lineage (ProofAnchor) stays separate: anchoring there requires the aggregator signature and strict sequencing by design.</p>
+    <p class="caption" style="margin-top:14px">"Record on-chain" writes your verified proof into the permissionless PublicProofs registry and gives you a transaction of your own: with your wallet you pay a fraction of a cent of gas on Robinhood Chain; the free option is paid by the project's relayer, limited to one per visitor per day. The operator lineage (ProofAnchor) stays separate: anchoring there requires the aggregator signature and strict sequencing by design.</p>
   </div>
 </section>
 
@@ -1232,8 +1232,16 @@ const proveLab=(function(){
     row("","secrets stayed in this browser; nothing above reveals them","");
     $("pvChain").disabled=false;$("pvTamper").disabled=false;
     const cfg=window.ZKQ_ONCHAIN;
-    $("pvWallet").disabled=!cfg.publicProofs; $("pvRelay").disabled=!(cfg.publicProofs&&cfg.relay);
+    $("pvWallet").disabled=!cfg.publicProofs;
+    $("pvRelay").disabled=!(cfg.publicProofs&&cfg.relay)||relayUsed();
+    if(relayUsed()) row("","free submission already used from this browser (one per visitor per day); use your wallet for more","");
   }
+
+  // one free relayer submission per browser per day (UX guard; the relayer
+  // enforces the same limit per IP on the server, which is the real gate)
+  const RELAY_KEY="zkq_relay_used";
+  function relayUsed(){ try{ return localStorage.getItem(RELAY_KEY)===new Date().toISOString().slice(0,10); }catch(e){ return false; } }
+  function markRelayUsed(){ try{ localStorage.setItem(RELAY_KEY,new Date().toISOString().slice(0,10)); }catch(e){} }
 
   function submitCalldata(){
     // submit(bytes,bytes32,bytes32): selector + offset(0x60) + ctx + tag + len + data
@@ -1281,6 +1289,9 @@ const proveLab=(function(){
       if(!r.ok) throw new Error(j.error||("HTTP "+r.status));
       row("tx",j.txHash,"",j.explorer||txLink(j.txHash));
       row("","submitted by the relayer; it will be mined within seconds. Open the link to see your proof recorded","good");
+      markRelayUsed();
+      row("","that was your free submission for today; the wallet button works without limit","");
+      return; // keep the button disabled
     }catch(e){ row("",e.message,"bad"); }
     btn.disabled=false;
   }
