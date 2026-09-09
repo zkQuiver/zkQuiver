@@ -57,6 +57,20 @@ by deploy (or just the contract address). Re-upload `index.html` to Netlify.
 Press "Run verification" on the live site: after the 17 local assertions it
 now shows the on-chain cross-check against your deployed contract.
 
+## 5b. Let visitors record their own proofs on-chain (optional, 15 min)
+1. `npm install` (adds ethers + @netlify/blobs for the relayer), then
+   `npx hardhat test` (PublicProofs suite included).
+2. `npm run deploy:public` -> prints PUBLIC_PROOFS_ADDRESS. Put it in `.env`
+   and into `window.ZKQ_ONCHAIN` in `site/index.html` (publicProofs field).
+3. Wallet path works immediately after re-uploading the site (visitors pay).
+4. Free path (relayer): in Netlify, switch the site to "Import from GitHub"
+   (build command empty; netlify.toml sets publish=site and the functions
+   dir). Create a FRESH relayer wallet, fund it modestly (testnet: faucet;
+   mainnet: $20 to $50 covers thousands of txs), and set environment
+   variables in Netlify: RELAYER_PRIVATE_KEY, PUBLIC_PROOFS_ADDRESS.
+   Optional: RELAY_PER_IP_PER_DAY (default 2), RELAY_GLOBAL_PER_DAY (300).
+   The key never enters the repo or the site.
+
 ## 6. Publish
 - GitHub: upload the whole folder (see README), including the workflow at
   `.github/workflows/ci.yml` (create by paste if the hidden folder is

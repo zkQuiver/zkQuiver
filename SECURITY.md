@@ -37,6 +37,15 @@ The website holds no secrets. Its on-chain verification is a read-only
    64-hex-character strings outside `.env`; CI runs the same scan and
    fails the build if one is found.
 
+## Relayer wallet (free on-chain submissions)
+
+The relayer key lives only in Netlify environment variables. The function
+preflights every bundle with a free call (invalid proofs cost nothing),
+enforces a per-IP and a global daily cap, refuses below a minimum balance,
+and can only ever call `PublicProofs.submit` with a fixed gas limit. Fund
+it modestly and treat it as disposable; the worst case of abuse is a
+bounded amount of gas.
+
 ## What the cryptography protects, and what it does not
 
 - Pedersen commitments are perfectly hiding: an observer of the chain

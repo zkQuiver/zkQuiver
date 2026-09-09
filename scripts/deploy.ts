@@ -42,12 +42,19 @@ async function main() {
   await (await anchor.setVerifier(verifierAddr)).wait();
   console.log("LineageVerifier:", verifierAddr, "(wired: every anchor now requires a valid ZK bundle)");
 
+  const PP = await ethers.getContractFactory("PublicProofs");
+  const pub = await PP.deploy(verifierAddr);
+  await pub.waitForDeployment();
+  const pubAddr = await pub.getAddress();
+  console.log("PublicProofs:", pubAddr, "(permissionless: anyone can record a verified proof)");
+
   const rpc = (process.env.RPC_URL ?? "https://rpc.testnet.chain.robinhood.com");
   console.log("\n----- paste into .env -----");
   console.log(`PROOF_ANCHOR_ADDRESS=${anchorAddr}`);
   console.log(`LINEAGE_VERIFIER_ADDRESS=${verifierAddr}`);
+  console.log(`PUBLIC_PROOFS_ADDRESS=${pubAddr}`);
   console.log("\n----- paste into site/index.html (ZKQ_ONCHAIN) -----");
-  console.log(`window.ZKQ_ONCHAIN = { rpcUrl: "${rpc}", contract: "${anchorAddr}" };`);
+  console.log(`window.ZKQ_ONCHAIN = { rpcUrl: "${rpc}", contract: "${anchorAddr}", verifier: "${verifierAddr}", publicProofs: "${pubAddr}" };`);
   console.log("\n----- explorer -----");
   console.log(`https://explorer.testnet.chain.robinhood.com/address/${anchorAddr}`);
 }

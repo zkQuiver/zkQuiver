@@ -82,8 +82,15 @@
   .term{border:2px solid var(--black)}
   .term-bar{background:var(--black);color:var(--white);font-family:var(--mono);font-size:12.5px;
     padding:8px 14px;display:flex;justify-content:space-between;gap:12px}
-  .term-body{font-family:var(--mono);font-size:12.5px;line-height:1.75;padding:16px 14px;min-height:340px;max-height:420px;
-    overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+  .term-body{font-family:var(--mono);font-size:12.5px;line-height:1.8;padding:18px 16px;min-height:340px;max-height:560px;
+    overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+  .term-body .sec{display:block;font-weight:700;margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
+  .term-body .sec:first-child{margin-top:0;padding-top:0;border-top:0}
+  .term-body .k{color:var(--gray);display:inline-block;min-width:9ch}
+  .term-body .v{word-break:break-all}
+  .term-body .sum{display:block;font-weight:700;margin-top:10px}
+  .term-body a{color:var(--black);text-decoration:underline;text-underline-offset:2px}
+  .term-body .ok-line{display:block;margin-top:6px;font-weight:700}
   .term-body .p::before{content:"■ ";font-style:normal}
   .term-body .f::before{content:"✗ ";font-weight:700}
   .term-body .d{color:var(--gray)}
@@ -155,6 +162,22 @@
   ul.plain{margin:16px 0 0 20px}
   ul.plain li{margin-bottom:8px}
 
+  /* prove-it-yourself */
+  .prove-lab{border:2px solid var(--black);padding:26px;margin-top:26px;background:var(--white)}
+  .prove-lab .fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .prove-lab label{font-family:var(--mono);font-size:12px;display:block;margin-bottom:5px;color:var(--gray)}
+  .prove-lab input{width:100%;font-family:var(--mono);font-size:14px;border:2px solid var(--black);padding:9px 10px;background:var(--white)}
+  .prove-lab .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .prove-lab .actions .btn{margin:0}
+  .prove-out{font-family:var(--mono);font-size:12.5px;margin-top:18px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;min-height:24px}
+  .prove-out .k{color:var(--gray);display:inline-block;min-width:11ch}
+  .prove-out .good{font-weight:700}
+  .prove-out .bad{font-weight:700}
+  .prove-out .bad::before{content:"✗ "}
+  .prove-out .good::before{content:"■ "}
+  .prove-out a{color:var(--black)}
+  @media(max-width:820px){.prove-lab .fields{grid-template-columns:1fr}}
+
   /* roadmap phases */
   .phases{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--black);margin-top:26px}
   .phase{padding:22px 20px;border-right:2px solid var(--black)}
@@ -206,6 +229,7 @@
       <li><a href="#how">How it works</a></li>
       <li><a href="docs.html">Docs</a></li>
       <li><a href="#code">Code</a></li>
+      <li><a href="#prove">Prove</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
       <li><a href="#status">Status</a></li>
       <li><a href="https://github.com/zkQuiver/zkQuiver" target="_blank" rel="noopener">GitHub</a></li>
@@ -453,6 +477,28 @@ npm install &amp;&amp; npx hardhat test  <span class="c"># contracts + on-chain 
   </div>
 </section>
 
+<div class="band"><div class="wrap"><h2>Prove it yourself</h2><span>your secrets never leave this page</span></div></div>
+<section id="prove">
+  <div class="wrap">
+    <p class="measure">Type any two secret values. Your browser turns each into a hiding commitment, generates the same zero-knowledge proof bundle the protocol anchors (proofs of opening for both commitments, plus a Chaum-Pedersen proof that two commitments hide the same value), verifies it locally, and then asks the <b>deployed verifier on Robinhood Chain</b> to check it too. The secrets are never sent anywhere: only the commitments and the proof leave this page, and they reveal nothing about the values.</p>
+    <div class="prove-lab">
+      <div class="fields">
+        <div><label for="pvA">secret value A (previous state root, any text)</label><input id="pvA" value="my previous state" autocomplete="off"></div>
+        <div><label for="pvB">secret value B (new state root, any text)</label><input id="pvB" value="my new state" autocomplete="off"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="pvGen" onclick="proveLab.generate()">Generate proof</button>
+        <button class="btn ghost" id="pvChain" onclick="proveLab.verifyOnChain(false)" disabled>Verify on-chain</button>
+        <button class="btn ghost" id="pvTamper" onclick="proveLab.verifyOnChain(true)" disabled>Tamper &amp; verify on-chain</button>
+        <button class="btn" id="pvWallet" onclick="proveLab.submitWallet()" disabled>Record on-chain with my wallet</button>
+        <button class="btn ghost" id="pvRelay" onclick="proveLab.submitRelay()" disabled>Record on-chain for free</button>
+      </div>
+      <div class="prove-out" id="pvOut">Nothing generated yet.</div>
+    </div>
+    <p class="caption" style="margin-top:14px">"Record on-chain" writes your verified proof into the permissionless PublicProofs registry and gives you a transaction of your own: with your wallet you pay a fraction of a cent of gas on Robinhood Chain; the free option is paid by the project's relayer, rate-limited to a couple per day. The operator lineage (ProofAnchor) stays separate: anchoring there requires the aggregator signature and strict sequencing by design.</p>
+  </div>
+</section>
+
 <div class="band"><div class="wrap"><h2>Roadmap</h2><span>four phases, stated plainly</span></div></div>
 <section id="roadmap">
   <div class="wrap">
@@ -582,7 +628,7 @@ function buildTests(){
    real on-chain assertion: the browser recomputes the DS hash locally and
    compares it against the live contract's computeDsHash over RPC. Leave
    empty and the suite runs local-only, exactly as before. */
-window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271" };
+window.ZKQ_ONCHAIN = { rpcUrl: "https://rpc.testnet.chain.robinhood.com", contract: "0x633F2ebbD04F0E9a7aa89Cb703b70b8F85Dd1271", verifier: "0x338EcB7d484fe882Da93ee40d82B5413a279665c", publicProofs: "", relay: "/.netlify/functions/relay" };
 
 async function rpc(url, method, params){
   const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
@@ -592,10 +638,12 @@ async function rpc(url, method, params){
   return j.result;
 }
 
-async function onchainCheck(line){
+async function onchainCheck(line,kv){
   const cfg=window.ZKQ_ONCHAIN;
   if(!cfg.rpcUrl||!cfg.contract) return null;   // not deployed yet: skip honestly
-  line("",""); line("hd","on-chain cross-check (Phase 2)");
+  line("sec","on-chain cross-check · Robinhood Chain testnet");
+  line("d","your browser recomputes the DS hash with the live chain id and contract, then asks the contract for its own answer");
+  const explorer="https://explorer.testnet.chain.robinhood.com/address/"+cfg.contract;
   try{
     const chainIdHex=await rpc(cfg.rpcUrl,"eth_chainId",[]);
     const chainId=BigInt(chainIdHex);
@@ -609,12 +657,15 @@ async function onchainCheck(line){
     const data="0x"+sel+ph+pad(1n)+pad(64n)+pad(1n);
     const ret=await rpc(cfg.rpcUrl,"eth_call",[{to:cfg.contract,data},"latest"]);
     const onchain=ret.replace(/^0x/,"").toLowerCase();
+    kv("chain",    String(chainId));
+    kv("contract", cfg.contract, explorer);
+    kv("browser",  "0x"+local);
+    kv("chain says","0x"+onchain);
     if(onchain===local){
-      line("p","deployed contract "+cfg.contract.slice(0,10)+"… agrees: computeDsHash matches the browser byte for byte");
-      line("d","chain id "+chainId+" · ds_hash 0x"+local);
+      line("ok-line","■ MATCH: the deployed contract agrees with your browser byte for byte");
       return true;
     }
-    line("f","MISMATCH: contract returned 0x"+onchain.slice(0,16)+"…, browser computed 0x"+local.slice(0,16)+"…");
+    line("f","MISMATCH between contract and browser");
     return false;
   }catch(e){
     line("d","on-chain check unavailable ("+e.message+"), local results above are unaffected");
@@ -628,8 +679,17 @@ async function runSuite(){
   const btn=document.getElementById("runBtn");
   const count=document.getElementById("termCount");
   btn.disabled=true; body.innerHTML=""; suiteRan=true;
-  const line=(cls,txt)=>{const s=document.createElement("span");if(cls)s.className=cls;
-    s.textContent=txt;body.appendChild(s);body.appendChild(document.createTextNode("\n"));
+  const line=(cls,txt,href)=>{
+    const s=document.createElement(href?"a":"span");
+    if(cls)s.className=cls; s.textContent=txt;
+    if(href){s.href=href;s.target="_blank";s.rel="noopener";}
+    body.appendChild(s);body.appendChild(document.createTextNode("\n"));
+    body.scrollTop=body.scrollHeight;};
+  const kv=(key,val,href)=>{
+    const k=document.createElement("span");k.className="k";k.textContent=key;
+    const v=document.createElement(href?"a":"span");v.className="v";v.textContent=val;
+    if(href){v.href=href;v.target="_blank";v.rel="noopener";}
+    body.appendChild(k);body.appendChild(v);body.appendChild(document.createTextNode("\n"));
     body.scrollTop=body.scrollHeight;};
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   line("hd","zkQuiver conformance suite");
@@ -646,13 +706,19 @@ async function runSuite(){
     await sleep(70);
   }
   const ms=(performance.now()-t0).toFixed(0);
-  line("","");
-  line("hd",pass+" passed, "+fail+" failed · "+ms+" ms");
-  line("","");
-  line("d","golden vector (cross-check against the contract with computeDsHash):");
-  line("d","DS bytes 0x"+hex(ds));
-  line("","ds_hash  0x"+golden);
-  await onchainCheck(line);
+  line("sum",pass+" passed, "+fail+" failed · "+ms+" ms");
+  line("sec","golden vector");
+  line("d","the 98-byte DS message, field by field, and its hash:");
+  const H=hex(ds);
+  kv("prefix",   "0x"+H.slice(0,28)+'  "zkRH/anchor/v1"');
+  kv("chainId",  "0x"+H.slice(28,44)+"  (42161, example value)");
+  kv("contract", "0x"+H.slice(44,84));
+  kv("proofHash","0x"+H.slice(84,148));
+  kv("start",    "0x"+H.slice(148,164)+"  (block 1)");
+  kv("end",      "0x"+H.slice(164,180)+"  (block 64)");
+  kv("seq",      "0x"+H.slice(180,196)+"  (1)");
+  kv("ds_hash",  "0x"+golden);
+  await onchainCheck(line,kv);
   const cur=document.createElement("span");cur.className="cursor";body.appendChild(cur);
   body.scrollTop=body.scrollHeight;
   btn.disabled=false;
@@ -861,6 +927,7 @@ window.ZKQField = ZKQField;   // public handle: tweak ZKQ_FIELD, call ZKQField.l
   const groups=[".pipe",".bytes",".band"];
   const singles="section h3, section .codebox, section table, section .ds-lab";
   const cardGroups=[".status",".cols",".phases"];
+  document.querySelectorAll(".prove-lab").forEach(el=>el.classList.add("rv"));
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){
     document.querySelectorAll(".stage,.bytes>div,.band").forEach(el=>el.classList.add("in"));
     return;
@@ -902,6 +969,341 @@ function scrambleInto(el, finalText, ms=420){
     if(t<1) requestAnimationFrame(frame);
   })(start);
 }
+
+/* ===== zkQuiver sigma layer, browser build (generated from zk/sigma.js + zk/prove.js) ===== */
+const ZK=(function(){
+const utf8=s=>new TextEncoder().encode(s);
+const bytesToBig=u8=>u8.reduce((a,b)=>(a<<8n)|BigInt(b),0n);
+function bigTo32(x){const u=new Uint8Array(32);for(let i=31;i>=0;i--){u[i]=Number(x&0xffn);x>>=8n;}return u;}
+
+const P = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2fn;
+const N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
+const Gx= 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798n;
+const Gy= 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8n;
+const G = {x:Gx, y:Gy};
+const O = null; // point at infinity
+
+const mod=(a,m)=>((a%m)+m)%m;
+function powmod(b,e,m){let r=1n;b=mod(b,m);while(e>0n){if(e&1n)r=(r*b)%m;b=(b*b)%m;e>>=1n;}return r;}
+const inv=(a,m)=>powmod(mod(a,m),m-2n,m);
+
+function onCurve(Q){ if(Q===O)return true;
+  return mod(Q.y*Q.y - (Q.x*Q.x*Q.x + 7n), P)===0n; }
+function ecAdd(A,B){
+  if(A===O)return B; if(B===O)return A;
+  if(A.x===B.x){
+    if(mod(A.y+B.y,P)===0n) return O;
+    // doubling
+    const l=mod(3n*A.x*A.x * inv(2n*A.y,P), P);
+    const x=mod(l*l - 2n*A.x, P);
+    return {x, y: mod(l*(A.x-x)-A.y, P)};
+  }
+  const l=mod((B.y-A.y)*inv(B.x-A.x,P), P);
+  const x=mod(l*l - A.x - B.x, P);
+  return {x, y: mod(l*(A.x-x)-A.y, P)};
+}
+function ecMul(k,Q){
+  k=mod(k,N); let R=O, T=Q;
+  while(k>0n){ if(k&1n)R=ecAdd(R,T); T=ecAdd(T,T); k>>=1n; }
+  return R;
+}
+function ecNeg(Q){ return Q===O?O:{x:Q.x, y:mod(-Q.y,P)}; }
+
+/* Ethereum-style address of a point: last 20 bytes of keccak(x||y).
+   Used by the on-chain verifier (ecrecover trick compares addresses). */
+function pointAddr(Q){
+  const u=new Uint8Array(64); u.set(bigTo32(Q.x),0); u.set(bigTo32(Q.y),32);
+  return "0x"+hex(keccak256(u).slice(12));
+}
+
+/* ---------------- H: second generator, nothing-up-my-sleeve ----------------
+   Try-and-increment from a fixed tag; discrete log of H wrt G unknown. */
+function deriveH(){
+  for(let i=0;;i++){
+    const x=mod(bytesToBig(keccak256(utf8("zkQuiver/H/v1/"+i))),P);
+    const y2=mod(x*x*x+7n,P);
+    const y=powmod(y2,(P+1n)/4n,P);           // p ≡ 3 mod 4
+    if(mod(y*y,P)===y2){ return {x, y: (y&1n)?mod(-y,P):y}; } // even y
+  }
+}
+const H=deriveH();
+
+/* ---------------- randomness ---------------- */
+function randScalar(){
+  while(true){
+    const k=bytesToBig(crypto.getRandomValues(new Uint8Array(32)));
+    const r=mod(k,N); if(r>0n) return r;
+  }
+}
+
+/* ---------------- Fiat-Shamir challenge ---------------- */
+function challenge(tag, points, extra32s){
+  const parts=[utf8(tag)];
+  for(const Q of points){ parts.push(bigTo32(Q.x), bigTo32(Q.y)); }
+  for(const e of (extra32s||[])) parts.push(e);
+  const total=parts.reduce((s,p2)=>s+p2.length,0);
+  const buf=new Uint8Array(total); let o=0;
+  for(const p2 of parts){ buf.set(p2,o); o+=p2.length; }
+  return mod(bytesToBig(keccak256(buf)), N);
+}
+
+/* ---------------- Pedersen commitment ----------------
+   Commit to a 32-byte value (e.g. a state root). The value is reduced
+   mod n; binding is to (value mod n). C = x*G + r*H. */
+function commit(value32, r){
+  const x=mod(bytesToBig(value32), N);
+  r = r===undefined ? randScalar() : r;
+  return { C: ecAdd(ecMul(x,G), ecMul(r,H)), x, r };
+}
+
+/* ---------------- NIZK: proof of opening (Okamoto) ----------------
+   Proves knowledge of (x, r) with C = xG + rH, revealing neither. */
+const TAG_OPEN="zkQuiver/sigma/open/v1";
+function proveOpening(C, x, r, ctx32){
+  const a=randScalar(), b=randScalar();
+  const A=ecAdd(ecMul(a,G), ecMul(b,H));
+  const c=challenge(TAG_OPEN,[C,A],[ctx32]);
+  return { A, z1: mod(a+c*x,N), z2: mod(b+c*r,N) };
+}
+function verifyOpening(C, prf, ctx32){
+  if(!onCurve(C)||!onCurve(prf.A)) return false;
+  const c=challenge(TAG_OPEN,[C,prf.A],[ctx32]);
+  const L=ecAdd(ecMul(prf.z1,G), ecMul(prf.z2,H));
+  const R=ecAdd(prf.A, ecMul(c,C));
+  return L!==O && R!==O && L.x===R.x && L.y===R.y;
+}
+
+/* ---------------- NIZK: equality of committed values ----------------
+   C1 = xG + r1H and C2 = xG + r2H hide the SAME x  ⇔
+   D = C1 - C2 = (r1-r2)H. Schnorr proof of knowledge of dlog of D
+   base H. Reveals nothing about x. */
+const TAG_EQ="zkQuiver/sigma/eq/v1";
+function proveEquality(C1, r1, C2, r2, ctx32){
+  const rho=mod(r1-r2,N);
+  const k=randScalar();
+  const A=ecMul(k,H);
+  const c=challenge(TAG_EQ,[C1,C2,A],[ctx32]);
+  return { A, z: mod(k+c*rho,N) };
+}
+function verifyEquality(C1, C2, prf, ctx32){
+  if(!onCurve(C1)||!onCurve(C2)||!onCurve(prf.A)) return false;
+  const D=ecAdd(C1, ecNeg(C2));
+  if(D===O) return false;                 // identical commitments: reject
+  const c=challenge(TAG_EQ,[C1,C2,prf.A],[ctx32]);
+  const L=ecMul(prf.z,H);
+  const R=ecAdd(prf.A, ecMul(c,D));
+  return L!==O && R!==O && L.x===R.x && L.y===R.y;
+}
+
+/* ---------------- serialization (for on-chain + transport) ---------------- */
+function pt(Qp){ return { x:"0x"+Qp.x.toString(16).padStart(64,"0"),
+                          y:"0x"+Qp.y.toString(16).padStart(64,"0") }; }
+function sc(s){ return "0x"+s.toString(16).padStart(64,"0"); }
+
+
+
+const w32 = v => bigTo32(typeof v === "bigint" ? v : BigInt(v));
+
+function challengeOpen(C, A, ctx32){
+  const buf = new Uint8Array(22 + 32*4 + 32);
+  buf.set(utf8("zkQuiver/sigma/open/v1"), 0);
+  buf.set(bigTo32(C.x),22); buf.set(bigTo32(C.y),54);
+  buf.set(bigTo32(A.x),86); buf.set(bigTo32(A.y),118);
+  buf.set(ctx32,150);
+  return mod(bytesToBig(keccak256(buf)), N);
+}
+function challengeEq(C1, C2, A, ctx32){
+  const buf = new Uint8Array(20 + 32*6 + 32);
+  buf.set(utf8("zkQuiver/sigma/eq/v1"), 0);
+  buf.set(bigTo32(C1.x),20); buf.set(bigTo32(C1.y),52);
+  buf.set(bigTo32(C2.x),84); buf.set(bigTo32(C2.y),116);
+  buf.set(bigTo32(A.x),148); buf.set(bigTo32(A.y),180);
+  buf.set(ctx32,212);
+  return mod(bytesToBig(keccak256(buf)), N);
+}
+
+/** Build the 23-word bundle for LineageVerifier. */
+function proveBundle(rootPrev32, rootOut32, ctx32){
+  const prev = commit(rootPrev32);
+  const cin  = commit(rootPrev32);       // same value, fresh blinding
+  const cout = commit(rootOut32);
+
+  // openings (contract-compatible challenges: on C, A, ctx)
+  function open(cm){
+    const a=randScalar(), b=randScalar();
+    const A=ecAdd(ecMul(a,G), ecMul(b,H));
+    const c=challengeOpen(cm.C, A, ctx32);
+    return { A, z1: mod(a+c*cm.x,N), z2: mod(b+c*cm.r,N),
+             CC: ecMul(c, cm.C) };
+  }
+  const oi = open(cin), oo = open(cout);
+
+  // equality(prevCout, C_in)
+  const rho = mod(prev.r - cin.r, N);
+  const k = randScalar();
+  const Aeq = ecMul(k, H);
+  const ceq = challengeEq(prev.C, cin.C, Aeq, ctx32);
+  const zeq = mod(k + ceq*rho, N);
+  const D = ecAdd(prev.C, ecNeg(cin.C));
+  const CD = ecMul(ceq, D);
+
+  const words = [
+    cin.C.x, cin.C.y, cout.C.x, cout.C.y, prev.C.x, prev.C.y,
+    oi.A.x, oi.A.y, oi.z1, oi.z2, oi.CC.x, oi.CC.y,
+    oo.A.x, oo.A.y, oo.z1, oo.z2, oo.CC.x, oo.CC.y,
+    Aeq.x, Aeq.y, zeq, CD.x, CD.y,
+  ];
+  const buf = new Uint8Array(23*32);
+  words.forEach((v,i)=>buf.set(w32(v), i*32));
+  return { hex: "0x"+hex(buf), words,
+           commitments: { prevCout: prev.C, C_in: cin.C, C_out: cout.C },
+           secrets: { note: "blindings held by prover; roots never revealed" } };
+}
+
+/** Exact JS mirror of LineageVerifier.verify (same checks, same order). */
+function verifyBundleJS(words, ctx32){
+  const pt=(i)=>({x:words[i], y:words[i+1]});
+  const [Cin, Cout, Prev] = [pt(0), pt(2), pt(4)];
+  const onc=[0,2,4,6,10,12,16,18,21].every(i=>onCurve(pt(i)));
+  if(!onc) return false;
+
+  function vOpen(C, Ai, z1i, CCi){
+    const A=pt(Ai), z1=words[z1i], z2=words[z1i+1], CC=pt(CCi);
+    const c=challengeOpen(C, A, ctx32);
+    if(pointAddr(ecMul(c, C)) !== pointAddr(CC)) return false;
+    const R=ecAdd(A, CC);
+    return pointAddr(ecAdd(ecMul(z1,G), ecMul(z2,H))) === pointAddr(R);
+  }
+  if(!vOpen(Cin, 6, 8, 10)) return false;
+  if(!vOpen(Cout, 12, 14, 16)) return false;
+
+  const Aeq=pt(18), zeq=words[20], CD=pt(21);
+  const c=challengeEq(Prev, Cin, Aeq, ctx32);
+  const D=ecAdd(Prev, ecNeg(Cin));
+  if(D===null) return false;
+  if(pointAddr(ecMul(c,D)) !== pointAddr(CD)) return false;
+  const R=ecAdd(Aeq, CD);
+  return pointAddr(ecMul(zeq,H)) === pointAddr(R);
+}
+
+
+return {commit, proveBundle, verifyBundleJS, pt, sc, H, G, N, bigTo32, utf8, hex};
+})();
+
+/* ============ prove-it-yourself controller ============ */
+const proveLab=(function(){
+  let bundle=null, ctx=null;
+  const $=id=>document.getElementById(id);
+  const out=()=>$("pvOut");
+  const row=(k,v,cls,href)=>{
+    const kk=document.createElement("span");kk.className="k";kk.textContent=k;
+    const vv=document.createElement(href?"a":"span");if(cls)vv.className=cls;vv.textContent=v;
+    if(href){vv.href=href;vv.target="_blank";vv.rel="noopener";}
+    out().appendChild(kk);out().appendChild(vv);out().appendChild(document.createTextNode("\n"));};
+  const clear=()=>{out().textContent="";};
+  const short=h=>h.slice(0,12)+"…"+h.slice(-8);
+
+  function generate(){
+    clear();
+    const a=$("pvA").value, b=$("pvB").value;
+    if(!a||!b){row("","enter two values","bad");return;}
+    const t0=performance.now();
+    const rootA=keccak256(utf8(a)), rootB=keccak256(utf8(b));
+    ctx=keccak256(utf8("zkQuiver/site-lab/"+Date.now()));
+    bundle=ZK.proveBundle(rootA,rootB,ctx);
+    const local=ZK.verifyBundleJS(bundle.words,ctx);
+    const ms=(performance.now()-t0).toFixed(0);
+    const C=bundle.commitments;
+    row("commit A","0x"+C.C_in.x.toString(16).padStart(64,"0")+"  (hides value A)");
+    row("commit B","0x"+C.C_out.x.toString(16).padStart(64,"0")+"  (hides value B)");
+    row("bundle",((bundle.hex.length-2)/2)+" bytes · 3 NIZK proofs · generated in "+ms+" ms");
+    row("ctx","0x"+hex(ctx));
+    row("",local?"verified locally: proofs are well-formed and the two A-commitments hide the same value":"local verification failed","good");
+    row("","secrets stayed in this browser; nothing above reveals them","");
+    $("pvChain").disabled=false;$("pvTamper").disabled=false;
+    const cfg=window.ZKQ_ONCHAIN;
+    $("pvWallet").disabled=!cfg.publicProofs; $("pvRelay").disabled=!(cfg.publicProofs&&cfg.relay);
+  }
+
+  function submitCalldata(){
+    // submit(bytes,bytes32,bytes32): selector + offset(0x60) + ctx + tag + len + data
+    const buf=new Uint8Array(23*32); bundle.words.forEach((v,i)=>buf.set(ZK.bigTo32(v),i*32));
+    const sel=hex(keccak256(utf8("submit(bytes,bytes32,bytes32)"))).slice(0,8);
+    const pad=n=>n.toString(16).padStart(64,"0");
+    const tag=hex(keccak256(utf8("zkquiver.site")));
+    return {data:"0x"+sel+pad(0x60)+hex(ctx)+tag+pad(736)+hex(buf), proofHex:"0x"+hex(buf), ctxHex:"0x"+hex(ctx), tagHex:"0x"+tag};
+  }
+  const txLink=h=>"https://explorer.testnet.chain.robinhood.com/tx/"+h;
+
+  async function submitWallet(){
+    if(!bundle) return;
+    const cfg=window.ZKQ_ONCHAIN;
+    if(!window.ethereum){row("","no wallet found: install MetaMask, or use the free option","bad");return;}
+    const btn=$("pvWallet"); btn.disabled=true;
+    try{
+      const [from]=await window.ethereum.request({method:"eth_requestAccounts"});
+      const chainHex="0x"+(46630).toString(16);
+      const cur=await window.ethereum.request({method:"eth_chainId"});
+      if(cur!==chainHex){
+        try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:chainHex}]}); }
+        catch(e){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:chainHex,chainName:"Robinhood Chain Testnet",
+          rpcUrls:[cfg.rpcUrl],nativeCurrency:{name:"Ether",symbol:"ETH",decimals:18},blockExplorerUrls:["https://explorer.testnet.chain.robinhood.com"]}]}); }
+      }
+      const {data}=submitCalldata();
+      row("","wallet: confirm the transaction in MetaMask (gas is a fraction of a cent)…","");
+      const txHash=await window.ethereum.request({method:"eth_sendTransaction",params:[{from,to:cfg.publicProofs,data}]});
+      row("tx",txHash,"",txLink(txHash));
+      row("","submitted from your wallet; once mined, your proof is a permanent on-chain record","good");
+    }catch(e){ row("","wallet submission failed: "+(e.message||e),"bad"); }
+    btn.disabled=false;
+  }
+
+  async function submitRelay(){
+    if(!bundle) return;
+    const cfg=window.ZKQ_ONCHAIN;
+    const btn=$("pvRelay"); btn.disabled=true;
+    row("","asking the project relayer to record your proof (it pays the gas)…","");
+    try{
+      const {proofHex,ctxHex,tagHex}=submitCalldata();
+      const r=await fetch(cfg.relay,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({proof:proofHex,ctx:ctxHex,tag:tagHex})});
+      const j=await r.json();
+      if(!r.ok) throw new Error(j.error||("HTTP "+r.status));
+      row("tx",j.txHash,"",j.explorer||txLink(j.txHash));
+      row("record id",String(j.id));
+      row("","recorded on Robinhood Chain: your proof now has its own transaction","good");
+    }catch(e){ row("",e.message,"bad"); }
+    btn.disabled=false;
+  }
+
+  async function verifyOnChain(tamper){
+    if(!bundle) return;
+    const cfg=window.ZKQ_ONCHAIN;
+    if(!cfg.verifier){row("","verifier address not configured","bad");return;}
+    let words=bundle.words.slice();
+    if(tamper){ words[20]=(words[20]+1n)%ZK.N; }
+    const buf=new Uint8Array(23*32); words.forEach((v,i)=>buf.set(ZK.bigTo32(v),i*32));
+    const proofHex=hex(buf), ctxHex=hex(ctx);
+    // verify(bytes,bytes32): selector + offset(0x40) + ctx + len + data
+    const sel=hex(keccak256(utf8("verify(bytes,bytes32)"))).slice(0,8);
+    const pad=n=>n.toString(16).padStart(64,"0");
+    const data="0x"+sel+pad(0x40)+ctxHex+pad(736)+proofHex;
+    const btn=$(tamper?"pvTamper":"pvChain"); btn.disabled=true;
+    row("",(tamper?"flipped one byte of the proof, ":"")+"asking the deployed verifier on Robinhood Chain…","");
+    try{
+      const r=await fetch(cfg.rpcUrl,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_call",params:[{to:cfg.verifier,data},"latest"]})});
+      const j=await r.json(); if(j.error) throw new Error(j.error.message);
+      const ok=/1$/.test(j.result);
+      row("verifier",cfg.verifier,"","https://explorer.testnet.chain.robinhood.com/address/"+cfg.verifier);
+      if(tamper) row("",ok?"UNEXPECTED: contract accepted a tampered proof":"contract REJECTED the tampered proof, as it should",ok?"bad":"good");
+      else row("",ok?"contract ACCEPTED your proof: verified on-chain, zero knowledge intact":"contract rejected the proof",ok?"good":"bad");
+    }catch(e){ row("","on-chain check unavailable: "+e.message,"bad"); }
+    btn.disabled=false;
+  }
+
+
+  return {generate, verifyOnChain, submitWallet, submitRelay};
+})();
 
 /* tabs */
 function showTab(i,btn){

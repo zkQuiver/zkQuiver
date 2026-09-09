@@ -1,0 +1,13 @@
+# Netlify: publish the static site and bundle the relayer function.
+# Connect this repo in Netlify (Add new site > Import from GitHub), leave the
+# build command EMPTY, and set env vars in Site configuration:
+#   RELAYER_PRIVATE_KEY   fresh, modestly funded wallet (NEVER in the repo)
+#   PUBLIC_PROOFS_ADDRESS address printed by deploy
+#   RPC_URL               optional override
+[build]
+  publish = "site"
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

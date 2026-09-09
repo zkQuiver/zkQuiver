@@ -8,7 +8,8 @@
     "doctor": "node scripts/doctor.js",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network robinhoodTestnet",
     "anchor:testnet": "hardhat run scripts/anchor-demo.ts --network robinhoodTestnet",
-    "compile": "hardhat compile"
+    "compile": "hardhat compile",
+    "deploy:public": "hardhat run scripts/deploy-public.ts --network robinhoodTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
@@ -16,5 +17,9 @@
     "dotenv": "^16.4.0",
     "hardhat": "^2.22.0",
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "ethers": "^6.13.0",
+    "@netlify/blobs": "^8.1.0"
   }
 }
