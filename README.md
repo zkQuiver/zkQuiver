@@ -10,7 +10,7 @@
 [![Solidity](https://img.shields.io/badge/solidity-0.8.24-black.svg)](contracts/ProofAnchor.sol)
 [![Conformance](https://img.shields.io/badge/conformance-17%2F17-black.svg)](orchestrator/src/kats.js)
 
-**[Website](https://github.com/zkQuiver/zkQuiver) · [How it works](#how-it-works) · [Quickstart](#quickstart) · [Verify it yourself](#verify-it-yourself) · [Roadmap](#roadmap)**
+**[Website](https://zkquiver.com) · [How it works](#how-it-works) · [Quickstart](#quickstart) · [Verify it yourself](#verify-it-yourself) · [Roadmap](#roadmap)**
 
 <br>
 
