@@ -575,6 +575,51 @@ function buildTests(){
   return {tests:t,golden,ds};
 }
 
+/* Phase 2 on-chain cross-check. Fill these two values in after deploying
+   ProofAnchor to Robinhood Chain testnet, and the verify button gains a
+   real on-chain assertion: the browser recomputes the DS hash locally and
+   compares it against the live contract's computeDsHash over RPC. Leave
+   empty and the suite runs local-only, exactly as before. */
+window.ZKQ_ONCHAIN = { rpcUrl: "", contract: "" };
+
+async function rpc(url, method, params){
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
+  const j=await r.json();
+  if(j.error) throw new Error(j.error.message||"rpc error");
+  return j.result;
+}
+
+async function onchainCheck(line){
+  const cfg=window.ZKQ_ONCHAIN;
+  if(!cfg.rpcUrl||!cfg.contract) return null;   // not deployed yet: skip honestly
+  line("",""); line("hd","on-chain cross-check (Phase 2)");
+  try{
+    const chainIdHex=await rpc(cfg.rpcUrl,"eth_chainId",[]);
+    const chainId=BigInt(chainIdHex);
+    const ph="aa".repeat(32);
+    // local DS hash with the REAL chain id + REAL contract address
+    const local=hex(keccak256(buildDs({chainId,contract:cfg.contract,
+      proofHashHex:ph,startBlock:1n,endBlock:64n,seq:1n})));
+    // selector for computeDsHash(bytes32,uint64,uint64,uint64)
+    const sel=hex(keccak256(utf8("computeDsHash(bytes32,uint64,uint64,uint64)"))).slice(0,8);
+    const pad=v=>v.toString(16).padStart(64,"0");
+    const data="0x"+sel+ph+pad(1n)+pad(64n)+pad(1n);
+    const ret=await rpc(cfg.rpcUrl,"eth_call",[{to:cfg.contract,data},"latest"]);
+    const onchain=ret.replace(/^0x/,"").toLowerCase();
+    if(onchain===local){
+      line("p","deployed contract "+cfg.contract.slice(0,10)+"… agrees: computeDsHash matches the browser byte for byte");
+      line("d","chain id "+chainId+" · ds_hash 0x"+local);
+      return true;
+    }
+    line("f","MISMATCH: contract returned 0x"+onchain.slice(0,16)+"…, browser computed 0x"+local.slice(0,16)+"…");
+    return false;
+  }catch(e){
+    line("d","on-chain check unavailable ("+e.message+") — local results above are unaffected");
+    return null;
+  }
+}
+
 let suiteRan=false;
 async function runSuite(){
   const body=document.getElementById("termBody");
@@ -605,6 +650,7 @@ async function runSuite(){
   line("d","golden vector (cross-check against the contract with computeDsHash):");
   line("d","DS bytes 0x"+hex(ds));
   line("","ds_hash  0x"+golden);
+  await onchainCheck(line);
   const cur=document.createElement("span");cur.className="cursor";body.appendChild(cur);
   body.scrollTop=body.scrollHeight;
   btn.disabled=false;
