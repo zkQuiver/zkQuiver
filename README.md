@@ -301,8 +301,9 @@ buys and sells** routes to the **prover treasury**, which pays for
 proof-generation compute (the Phase 3 SP1/RISC Zero provers), anchoring
 gas, and orchestrator/indexer infrastructure. Until the ZK layer ships,
 the treasury accrues toward proving infrastructure. The tax lives in the
-token contract, separate from this repo; the treasury address and flows
-will be published on-chain.
+token contract, separate from this repo.
+
+**Prover treasury (Robinhood Chain mainnet):** [`0x6a6fe1b991578f950c8a152060f55f2c7c11ab02`](https://explorer.mainnet.chain.robinhood.com/address/0x6a6fe1b991578f950c8a152060f55f2c7c11ab02)
 
 ## Roadmap
 
