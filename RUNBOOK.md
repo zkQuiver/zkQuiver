@@ -68,7 +68,7 @@ now shows the on-chain cross-check against your deployed contract.
    dir). Create a FRESH relayer wallet, fund it modestly (testnet: faucet;
    mainnet: $20 to $50 covers thousands of txs), and set environment
    variables in Netlify: RELAYER_PRIVATE_KEY, PUBLIC_PROOFS_ADDRESS.
-   Optional: RELAY_PER_IP_PER_DAY (default 2), RELAY_GLOBAL_PER_DAY (300).
+   Optional: RELAY_PER_IP_PER_DAY (default 1), RELAY_GLOBAL_PER_DAY (300).
    The key never enters the repo or the site.
 
 ## 6. Publish
